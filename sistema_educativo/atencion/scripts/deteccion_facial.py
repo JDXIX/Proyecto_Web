@@ -2,6 +2,47 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+import time
+
+def monitorear_atencion_durante_tiempo(segundos=30):
+    mp_face_mesh = mp.solutions.face_mesh
+    face_mesh = mp_face_mesh.FaceMesh(min_detection_confidence=0.3, min_tracking_confidence=0.3)
+    cap = cv2.VideoCapture(0)
+    resultados = []
+    start_time = time.time()
+
+    while cap.isOpened() and (time.time() - start_time < segundos):
+        success, image = cap.read()
+        if not success:
+            break
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        results = face_mesh.process(image_rgb)
+        if results.multi_face_landmarks:
+            for face_landmarks in results.multi_face_landmarks:
+                desviacion = calcular_desviacion_mirada(face_landmarks.landmark, image)
+                cierre_ojos = detectar_cierre_ojos(face_landmarks.landmark, image.shape)
+                resultados.append({"desviacion": desviacion, "cierre_ojos": bool(cierre_ojos)})
+        if cv2.waitKey(5) & 0xFF == 27:
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+    # Calcular promedios
+    if resultados:
+        promedio_desviacion = np.mean([r["desviacion"] for r in resultados])
+        porcentaje_cierre_ojos = np.mean([r["cierre_ojos"] for r in resultados])
+    else:
+        promedio_desviacion = 0
+        porcentaje_cierre_ojos = 0
+
+    return {
+        "promedio_desviacion": promedio_desviacion,
+        "porcentaje_cierre_ojos": porcentaje_cierre_ojos,
+        "frames_analizados": len(resultados)
+    }
+
+
 def calcular_desviacion_mirada(landmarks, frame):
     if len(landmarks) < 387:
         print(f"Landmarks: {len(landmarks)}")
