@@ -22,7 +22,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[90vh] items-center justify-center bg-white">
+    <div className="min-h-screen w-full flex items-center justify-center bg-white">
       <div className="flex w-full max-w-4xl rounded-lg shadow-md overflow-hidden bg-white border border-[#D3D3D3]">
         {/* Columna formulario */}
         <div className="w-full md:w-1/3 flex flex-col justify-center items-center p-8 bg-white">
