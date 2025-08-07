@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { login } from "@/services/auth";
+import { getUsuarioActual } from "@/services/usuarios";
+
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -10,16 +12,26 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    try {
-      await login(username, password);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  try {
+    const data = await login(username, password);
+    localStorage.setItem("token", data.access);
+
+    // Obtener el usuario actual y su rol
+    const user = await getUsuarioActual(data.access);
+    const rol = user.rol?.toLowerCase(); // admin, docente, estudiante
+
+    if (rol === "admin" || rol === "docente" || rol === "estudiante") {
+      router.push(`/dashboard/${rol}`);
+    } else {
       router.push("/dashboard");
-    } catch (err: any) {
-      setError("Usuario o contraseña incorrectos.");
     }
-  };
+  } catch (err: any) {
+    setError("Usuario o contraseña incorrectos.");
+  }
+};
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-white">

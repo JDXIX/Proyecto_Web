@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from usuarios.views import UsuarioViewSet, PerfilUsuarioViewSet
+from usuarios.views import UsuarioViewSet, PerfilUsuarioViewSet, CustomTokenObtainPairView
 from cursos.views import CursoViewSet, NivelViewSet, FaseViewSet, RecursoViewSet, InscripcionViewSet
 from atencion.views import SesionMonitoreoViewSet, AtencionVisualViewSet
 from recomendaciones.views import RecomendacionIAViewSet, HistorialEstudianteViewSet
@@ -23,6 +23,6 @@ router.register(r'historial-estudiantes', HistorialEstudianteViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

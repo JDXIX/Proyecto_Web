@@ -1,17 +1,13 @@
 "use client";
-import { useState } from "react";
-
-const usuariosDummy = [
-  { id: 1, nombre: "Ana Pérez", email: "ana@jmvision.edu", rol: "Docente", estado: "Activo" },
-  { id: 2, nombre: "Juan Torres", email: "juan@jmvision.edu", rol: "Estudiante", estado: "Activo" },
-  { id: 3, nombre: "Carlos Ruiz", email: "carlos@jmvision.edu", rol: "Docente", estado: "Inactivo" },
-];
+import { useEffect, useState } from "react";
+import { getUsuarios } from "@/services/usuarios";
 
 const roles = ["Administrador", "Docente", "Estudiante"];
 const estados = ["Activo", "Inactivo"];
 
 export default function AdminDashboard() {
-  const [usuarios, setUsuarios] = useState(usuariosDummy);
+  // Usuarios
+  const [usuarios, setUsuarios] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [nuevoUsuario, setNuevoUsuario] = useState({
     nombre: "",
@@ -20,8 +16,55 @@ export default function AdminDashboard() {
     estado: "Activo",
   });
 
+  // Estado para edición de usuario
+  const [usuarioEnEdicion, setUsuarioEnEdicion] = useState<any>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Cursos (dummy por ahora)
+  const [cursos, setCursos] = useState([
+    { id: 1, nombre: "Matemáticas 101", descripcion: "Álgebra básica", docente: "Ana Pérez", umbral_nota: 70 },
+    { id: 2, nombre: "Física I", descripcion: "Mecánica clásica", docente: "Carlos Ruiz", umbral_nota: 75 },
+  ]);
+  const [showCursoModal, setShowCursoModal] = useState(false);
+  const docentesDummy = usuarios.filter(u => u.rol === "Docente" && (u.estado === "Activo" || u.is_active));
+  const [nuevoCurso, setNuevoCurso] = useState({
+    nombre: "",
+    descripcion: "",
+    docente: docentesDummy[0]?.nombre || "",
+    umbral_nota: 70,
+  });
+
+  // Estado para edición de curso
+  const [cursoEnEdicion, setCursoEnEdicion] = useState<any>(null);
+  const [showEditCursoModal, setShowEditCursoModal] = useState(false);
+
+  // Cargar usuarios desde API al montar
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      getUsuarios(token)
+        .then(data => {
+          setUsuarios(data);
+          console.log("Usuarios cargados desde API:", data);
+        })
+        .catch(err => {
+          console.error("Error al cargar usuarios:", err);
+        });
+    }
+  }, []);
+
+  // Handlers usuarios (solo frontend por ahora)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setNuevoUsuario({ ...nuevoUsuario, [e.target.name]: e.target.value });
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (usuarioEnEdicion) {
+      setUsuarioEnEdicion({
+        ...usuarioEnEdicion,
+        [e.target.name]: e.target.value
+      });
+    }
   };
 
   const handleCrearUsuario = (e: React.FormEvent) => {
@@ -38,9 +81,83 @@ export default function AdminDashboard() {
     setShowModal(false);
   };
 
+  const handleEliminarUsuario = (id: number) => {
+    if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
+      setUsuarios(usuarios.filter(u => u.id !== id));
+    }
+  };
+
+  const handleEditarUsuario = (usuario: any) => {
+    setUsuarioEnEdicion(usuario);
+    setShowEditModal(true);
+  };
+
+  const handleGuardarEdicionUsuario = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usuarioEnEdicion || !usuarioEnEdicion.nombre || !usuarioEnEdicion.email) return;
+    setUsuarios(usuarios.map(u =>
+      u.id === usuarioEnEdicion.id ? usuarioEnEdicion : u
+    ));
+    setUsuarioEnEdicion(null);
+    setShowEditModal(false);
+  };
+
+  // Handlers cursos (dummy)
+  const handleCursoInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setNuevoCurso({
+      ...nuevoCurso,
+      [e.target.name]: e.target.name === 'umbral_nota' ? Number(e.target.value) : e.target.value
+    });
+  };
+
+  const handleEditCursoInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (cursoEnEdicion) {
+      setCursoEnEdicion({
+        ...cursoEnEdicion,
+        [e.target.name]: e.target.name === 'umbral_nota' ? Number(e.target.value) : e.target.value
+      });
+    }
+  };
+
+  const handleCrearCurso = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nuevoCurso.nombre || !nuevoCurso.docente) return;
+    setCursos([
+      ...cursos,
+      {
+        ...nuevoCurso,
+        id: cursos.length + 1,
+      },
+    ]);
+    setNuevoCurso({ nombre: "", descripcion: "", docente: docentesDummy[0]?.nombre || "", umbral_nota: 70 });
+    setShowCursoModal(false);
+  };
+
+  const handleEliminarCurso = (id: number) => {
+    if (confirm("¿Estás seguro de que deseas eliminar este curso?")) {
+      setCursos(cursos.filter(c => c.id !== id));
+    }
+  };
+
+  const handleEditarCurso = (curso: any) => {
+    setCursoEnEdicion(curso);
+    setShowEditCursoModal(true);
+  };
+
+  const handleGuardarEdicionCurso = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cursoEnEdicion || !cursoEnEdicion.nombre || !cursoEnEdicion.docente) return;
+    setCursos(cursos.map(c =>
+      c.id === cursoEnEdicion.id ? cursoEnEdicion : c
+    ));
+    setCursoEnEdicion(null);
+    setShowEditCursoModal(false);
+  };
+
   return (
     <div className="p-8 w-full max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold text-[#003087] mb-6">Panel de Administrador</h1>
+      {/* Gestión de Usuarios */}
       <section className="mb-10">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Gestión de Usuarios</h2>
@@ -65,13 +182,23 @@ export default function AdminDashboard() {
             <tbody>
               {usuarios.map((u) => (
                 <tr key={u.id} className="hover:bg-[#F4F8FB]">
-                  <td className="py-2 px-4 border-b">{u.nombre}</td>
+                  <td className="py-2 px-4 border-b">{u.first_name || u.nombre} {u.last_name || ""}</td>
                   <td className="py-2 px-4 border-b">{u.email}</td>
                   <td className="py-2 px-4 border-b">{u.rol}</td>
-                  <td className="py-2 px-4 border-b">{u.estado}</td>
+                  <td className="py-2 px-4 border-b">{u.estado !== undefined ? u.estado : (u.is_active ? "Activo" : "Inactivo")}</td>
                   <td className="py-2 px-4 border-b">
-                    <button className="text-[#00B7EB] hover:underline mr-2">Editar</button>
-                    <button className="text-[#DC2626] hover:underline">Eliminar</button>
+                    <button
+                      className="text-[#00B7EB] hover:underline mr-2"
+                      onClick={() => handleEditarUsuario(u)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="text-[#DC2626] hover:underline"
+                      onClick={() => handleEliminarUsuario(u.id)}
+                    >
+                      Eliminar
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -160,12 +287,293 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Modal para editar usuario */}
+      {showEditModal && usuarioEnEdicion && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-[#003087]">Editar usuario</h3>
+            <form onSubmit={handleGuardarEdicionUsuario} className="space-y-4">
+              <div>
+                <label className="block font-semibold mb-1">Nombre</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={usuarioEnEdicion.nombre}
+                  onChange={handleEditInputChange}
+                  className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Correo electrónico</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={usuarioEnEdicion.email}
+                  onChange={handleEditInputChange}
+                  className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                  required
+                />
+              </div>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block font-semibold mb-1">Rol</label>
+                  <select
+                    name="rol"
+                    value={usuarioEnEdicion.rol}
+                    onChange={handleEditInputChange}
+                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                  >
+                    {roles.map((rol) => (
+                      <option key={rol} value={rol}>
+                        {rol}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block font-semibold mb-1">Estado</label>
+                  <select
+                    name="estado"
+                    value={usuarioEnEdicion.estado}
+                    onChange={handleEditInputChange}
+                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                  >
+                    {estados.map((estado) => (
+                      <option key={estado} value={estado}>
+                        {estado}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
+                  onClick={() => {
+                    setUsuarioEnEdicion(null);
+                    setShowEditModal(false);
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded bg-[#003087] text-white font-semibold hover:bg-[#002060]"
+                >
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Gestión de Cursos */}
       <section>
-        <h2 className="text-xl font-semibold mb-4">Gestión de Cursos</h2>
-        <div className="bg-[#F4F8FB] border border-[#D3D3D3] rounded p-6 text-gray-500">
-          Aquí irá la gestión de cursos (crear, editar, eliminar, asignar docente).
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Gestión de Cursos</h2>
+          <button
+            className="bg-[#00B7EB] text-white px-4 py-2 rounded font-semibold hover:bg-[#009fc2] transition"
+            onClick={() => setShowCursoModal(true)}
+          >
+            Crear curso
+          </button>
+        </div>
+        <div className="overflow-x-auto rounded shadow mb-6">
+          <table className="min-w-full bg-white border border-[#D3D3D3]">
+            <thead>
+              <tr className="bg-[#F4F8FB] text-[#003087]">
+                <th className="py-2 px-4 border-b">Nombre</th>
+                <th className="py-2 px-4 border-b">Descripción</th>
+                <th className="py-2 px-4 border-b">Docente</th>
+                <th className="py-2 px-4 border-b">Umbral Nota (%)</th>
+                <th className="py-2 px-4 border-b">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cursos.map((c) => (
+                <tr key={c.id} className="hover:bg-[#F4F8FB]">
+                  <td className="py-2 px-4 border-b">{c.nombre}</td>
+                  <td className="py-2 px-4 border-b">{c.descripcion}</td>
+                  <td className="py-2 px-4 border-b">{c.docente}</td>
+                  <td className="py-2 px-4 border-b">{c.umbral_nota}</td>
+                  <td className="py-2 px-4 border-b">
+                    <button
+                      className="text-[#00B7EB] hover:underline mr-2"
+                      onClick={() => handleEditarCurso(c)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="text-[#DC2626] hover:underline"
+                      onClick={() => handleEliminarCurso(c.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
+
+      {/* Modal para crear curso */}
+      {showCursoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-[#003087]">Crear nuevo curso</h3>
+            <form onSubmit={handleCrearCurso} className="space-y-4">
+              <div>
+                <label className="block font-semibold mb-1">Nombre</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={nuevoCurso.nombre}
+                  onChange={handleCursoInputChange}
+                  className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Descripción</label>
+                <input
+                  type="text"
+                  name="descripcion"
+                  value={nuevoCurso.descripcion}
+                  onChange={handleCursoInputChange}
+                  className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Docente</label>
+                <select
+                  name="docente"
+                  value={nuevoCurso.docente}
+                  onChange={handleCursoInputChange}
+                  className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                  required
+                >
+                  {docentesDummy.map((d) => (
+                    <option key={d.nombre || d.first_name} value={d.nombre || d.first_name}>
+                      {d.nombre || d.first_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Umbral Nota (%)</label>
+                <input
+                  type="number"
+                  name="umbral_nota"
+                  value={nuevoCurso.umbral_nota}
+                  min={0}
+                  max={100}
+                  onChange={handleCursoInputChange}
+                  className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
+                  onClick={() => setShowCursoModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded bg-[#003087] text-white font-semibold hover:bg-[#002060]"
+                >
+                  Crear
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para editar curso */}
+      {showEditCursoModal && cursoEnEdicion && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-[#003087]">Editar curso</h3>
+            <form onSubmit={handleGuardarEdicionCurso} className="space-y-4">
+              <div>
+                <label className="block font-semibold mb-1">Nombre</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={cursoEnEdicion.nombre}
+                  onChange={handleEditCursoInputChange}
+                  className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Descripción</label>
+                <input
+                  type="text"
+                  name="descripcion"
+                  value={cursoEnEdicion.descripcion}
+                  onChange={handleEditCursoInputChange}
+                  className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Docente</label>
+                <select
+                  name="docente"
+                  value={cursoEnEdicion.docente}
+                  onChange={handleEditCursoInputChange}
+                  className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                  required
+                >
+                  {docentesDummy.map((d) => (
+                    <option key={d.nombre || d.first_name} value={d.nombre || d.first_name}>
+                      {d.nombre || d.first_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Umbral Nota (%)</label>
+                <input
+                  type="number"
+                  name="umbral_nota"
+                  value={cursoEnEdicion.umbral_nota}
+                  min={0}
+                  max={100}
+                  onChange={handleEditCursoInputChange}
+                  className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
+                  onClick={() => {
+                    setCursoEnEdicion(null);
+                    setShowEditCursoModal(false);
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded bg-[#003087] text-white font-semibold hover:bg-[#002060]"
+                >
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
