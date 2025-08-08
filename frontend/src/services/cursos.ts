@@ -2,6 +2,7 @@ import axios from "axios";
 
 const API_URL = "http://localhost:8000/api/cursos/";
 
+
 export async function getCursos(token: string) {
   const res = await axios.get(API_URL, {
     headers: { Authorization: `Bearer ${token}` }
