@@ -11,3 +11,11 @@ export async function inscribirEstudiante(estudiante: string, curso: string) {
   );
   return res.data;
 }
+
+export async function getInscripcionesPorEstudiante(estudianteId: string) {
+  const token = localStorage.getItem("token");
+  const res = await axios.get(`${API_URL}?estudiante=${estudianteId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+}
