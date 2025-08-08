@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getUsuarios } from "@/services/usuarios";
 import { getCursos } from "@/services/cursos";
 import { inscribirEstudiante } from "@/services/inscripciones";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { getUsuarioActual } from "@/services/usuarios";
+import axios from "axios";
 
 const roles = ["Administrador", "Docente", "Estudiante"];
 const estados = ["Activo", "Inactivo"];
@@ -31,7 +32,10 @@ export default function AdminDashboard() {
   // Cursos
   const [cursos, setCursos] = useState<any[]>([]);
   const [showCursoModal, setShowCursoModal] = useState(false);
-  const docentesDummy = usuarios.filter(u => u.rol === "docente" || u.rol === "Docente" && (u.estado === "Activo" || u.is_active));
+  const docentesDummy = usuarios.filter(
+    u => (u.rol === "docente" || u.rol === "Docente") && 
+    (u.estado === "Activo" || u.is_active)
+  );
   const [nuevoCurso, setNuevoCurso] = useState({
     nombre: "",
     descripcion: "",
@@ -49,6 +53,10 @@ export default function AdminDashboard() {
   const [cursoSeleccionado, setCursoSeleccionado] = useState("");
   const [mensajeInscripcion, setMensajeInscripcion] = useState("");
   const [tipoMensaje, setTipoMensaje] = useState<"success" | "error" | "">("");
+
+  // Nueva sección: Inscripción masiva por CSV
+  const [csvResult, setCsvResult] = useState<any[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Cargar usuario actual y datos
   useEffect(() => {
@@ -70,7 +78,7 @@ export default function AdminDashboard() {
         .then(data => {
           setUsuarios(data);
           // Filtrar estudiantes para inscripción
-          setEstudiantesDisponibles(data.filter(u => u.rol === "estudiante" || u.rol === "Estudiante"));
+          setEstudiantesDisponibles(data.filter((u: { rol: any; }) => (u.rol || "").toLowerCase().trim() === "estudiante"));
           console.log("Usuarios cargados desde API:", data);
         })
         .catch(err => {
@@ -202,7 +210,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      await inscribirEstudiante(Number(estudianteSeleccionado), Number(cursoSeleccionado));
+      await inscribirEstudiante(estudianteSeleccionado, cursoSeleccionado);
       setMensajeInscripcion("¡Estudiante inscrito correctamente!");
       setTipoMensaje("success");
       
@@ -218,6 +226,34 @@ export default function AdminDashboard() {
     } catch (error: any) {
       setMensajeInscripcion(error.message || "Error al inscribir estudiante");
       setTipoMensaje("error");
+    }
+  };
+
+  // Handler para inscripción masiva por CSV
+  const handleCsvUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const token = localStorage.getItem("token");
+    try {
+      const res = await axios.post(
+        "http://localhost:8000/api/inscripciones/cargar_csv/",
+        formData,
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`, 
+            "Content-Type": "multipart/form-data" 
+          } 
+        }
+      );
+      setCsvResult(res.data);
+    } catch (err: any) {
+      console.error("Error al procesar CSV:", err);
+      setCsvResult([{ status: "Error al procesar el archivo" }]);
     }
   };
 
@@ -343,6 +379,78 @@ export default function AdminDashboard() {
           </div>
         </section>
 
+        {/* NUEVA SECCIÓN: Inscripción masiva por CSV */}
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Inscripción Masiva por CSV</h2>
+          </div>
+          <div className="bg-white border border-[#D3D3D3] rounded shadow p-6">
+            <form onSubmit={handleCsvUpload} className="space-y-4">
+              <div>
+                <label className="block font-semibold mb-2">
+                  Sube un archivo CSV con formato: email,curso_id
+                </label>
+                <div className="flex flex-col md:flex-row gap-4 items-start">
+                  <input 
+                    type="file" 
+                    accept=".csv" 
+                    ref={fileInputRef} 
+                    className="border border-[#D3D3D3] rounded px-3 py-2 w-full md:w-auto"
+                    required 
+                  />
+                  <button
+                    type="submit"
+                    className="bg-[#003087] text-white px-4 py-2 rounded font-semibold hover:bg-[#002060] transition"
+                  >
+                    Subir y Procesar CSV
+                  </button>
+                </div>
+              </div>
+
+              {csvResult.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="font-bold mb-2">Resultados de la inscripción masiva:</h3>
+                  <div className="max-h-60 overflow-y-auto border border-[#D3D3D3] rounded">
+                    <table className="min-w-full bg-white">
+                      <thead>
+                        <tr className="bg-[#F4F8FB] text-[#003087]">
+                          <th className="py-2 px-4 border-b text-left">Email</th>
+                          <th className="py-2 px-4 border-b text-left">Curso</th>
+                          <th className="py-2 px-4 border-b text-left">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {csvResult.map((r, i) => (
+                          <tr key={i} className="hover:bg-[#F4F8FB]">
+                            <td className="py-2 px-4 border-b">{r.email || "—"}</td>
+                            <td className="py-2 px-4 border-b">{r.curso_id || "—"}</td>
+                            <td className={`py-2 px-4 border-b ${
+                              r.status === "inscrito" 
+                                ? "text-green-600" 
+                                : r.status === "ya inscrito" 
+                                ? "text-blue-600" 
+                                : "text-red-600"
+                            }`}>
+                              {r.status}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-3 text-sm text-gray-600">
+                    <p>
+                      Total: {csvResult.length} registros procesados |  
+                      Exitosos: {csvResult.filter(r => r.status === "inscrito" || r.status === "ya inscrito").length} |
+                      Con error: {csvResult.filter(r => r.status !== "inscrito" && r.status !== "ya inscrito").length}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+        </section>
+
         {/* Gestión de Cursos */}
         <section>
           <div className="flex items-center justify-between mb-4">
@@ -358,6 +466,8 @@ export default function AdminDashboard() {
             <table className="min-w-full bg-white border border-[#D3D3D3]">
               <thead>
                 <tr className="bg-[#F4F8FB] text-[#003087]">
+                  {/* Nueva columna para mostrar el ID del curso */}
+                  <th className="py-2 px-4 border-b">ID</th>
                   <th className="py-2 px-4 border-b">Nombre</th>
                   <th className="py-2 px-4 border-b">Descripción</th>
                   <th className="py-2 px-4 border-b">Docente</th>
@@ -368,6 +478,8 @@ export default function AdminDashboard() {
               <tbody>
                 {cursos.map((c) => (
                   <tr key={c.id} className="hover:bg-[#F4F8FB]">
+                    {/* Nueva celda para mostrar el ID del curso */}
+                    <td className="py-2 px-4 border-b">{c.id}</td>
                     <td className="py-2 px-4 border-b">{c.nombre}</td>
                     <td className="py-2 px-4 border-b">{c.descripcion}</td>
                     <td className="py-2 px-4 border-b">{c.docente}</td>
