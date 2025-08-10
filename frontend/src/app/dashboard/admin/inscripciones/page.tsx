@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { getUsuarios } from "@/services/usuarios";
+import { getUsuarios, getUsuarioActual } from "@/services/usuarios";
 import { getCursos } from "@/services/cursos";
 import { inscribirEstudiante } from "@/services/inscripciones";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -26,8 +26,12 @@ export default function InscripcionesPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      // Puedes usar getUsuarioActual si quieres proteger la ruta
-      setUser({}); // Solo para ProtectedRoute, si quieres puedes cargar el usuario real
+      // Carga el usuario real para ProtectedRoute
+      getUsuarioActual(token)
+        .then(userData => setUser(userData))
+        .catch(() => setUser(null))
+        .finally(() => setLoading(false));
+
       getUsuarios(token)
         .then(data => {
           setUsuarios(data);
@@ -37,8 +41,9 @@ export default function InscripcionesPage() {
       getCursos(token)
         .then(data => setCursos(data))
         .catch(() => {});
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const handleInscribirEstudiante = async (e: React.FormEvent) => {
