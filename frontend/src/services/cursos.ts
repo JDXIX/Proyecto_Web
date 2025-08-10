@@ -29,3 +29,10 @@ export async function eliminarCurso(id: string, token: string) {
     headers: { Authorization: `Bearer ${token}` }
   });
 }
+
+export async function getCursoDetalle(cursoId: string | number, token: string) {
+  const res = await axios.get(`${API_URL}${cursoId}/detalle/`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+}
