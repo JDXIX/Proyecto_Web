@@ -45,3 +45,10 @@ export async function getRecursoDetalle(token: string, recursoId: string) {
   });
   return res.json();
 }
+
+export async function getCursosDocente(token: string) {
+  const res = await axios.get("http://localhost:8000/api/cursos/docente/", {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+}
