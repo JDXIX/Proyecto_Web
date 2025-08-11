@@ -5,36 +5,35 @@ import Image from "next/image";
 import { login } from "@/services/auth";
 import { getUsuarioActual } from "@/services/usuarios";
 
-
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError("");
-  try {
-    const data = await login(username, password);
-    localStorage.setItem("token", data.access);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const data = await login(username, password);
+      localStorage.setItem("token", data.access);
 
-    // Obtener el usuario actual y su rol
-    const user = await getUsuarioActual(data.access);
-    const rol = user.rol?.toLowerCase(); // admin, docente, estudiante
+      // Obtener el usuario actual y su rol
+      const user = await getUsuarioActual(data.access);
+      const rol = user.rol?.toLowerCase(); // admin, docente, estudiante
 
-    if (rol === "admin" || rol === "docente" || rol === "estudiante") {
-      router.push(`/dashboard/${rol}`);
-    } else {
-      router.push("/dashboard");
+      if (rol === "admin" || rol === "docente" || rol === "estudiante") {
+        router.push(`/dashboard/${rol}`);
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      setError("Usuario o contraseña incorrectos.");
     }
-  } catch (err: any) {
-    setError("Usuario o contraseña incorrectos.");
-  }
-};
+  };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-white">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F4F8FB] py-8">
       <div className="flex w-full max-w-4xl rounded-lg shadow-md overflow-hidden bg-white border border-[#D3D3D3]">
         {/* Columna formulario */}
         <div className="w-full md:w-1/3 flex flex-col justify-center items-center p-8 bg-white">

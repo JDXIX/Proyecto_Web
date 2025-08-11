@@ -6,7 +6,7 @@ import ResourceViewer from "./components/ResourceViewer";
 import { useParams } from "next/navigation";
 import { getCursoDetalle } from "@/services/cursos";
 
-// Tipos locales (puedes moverlos a un archivo types si lo prefieres)
+// Tipos locales
 interface Recurso {
   id: number | string;
   nombre: string;
@@ -137,9 +137,8 @@ export default function CursoEstudiantePage() {
 
   // Cuando el usuario da clic en "Empezar" en un recurso calificado
   const handleEmpezarRecurso = (recurso: Recurso) => {
-    // Aquí puedes actualizar el estado para marcar que ha empezado (y activar monitoreo, etc.)
     setRecursoActual({ ...recurso, haEmpezado: true });
-    // También puedes hacer una petición al backend si es necesario
+    // Aquí podrías hacer una petición al backend si es necesario
   };
 
   return (

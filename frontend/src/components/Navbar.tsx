@@ -1,30 +1,42 @@
+"use client";
+
+import React from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/"); // Redirige al login o landing page
+  };
+
   return (
-    <nav className="fixed top-0 left-0 w-full h-16 bg-[#003087] flex items-center justify-between px-8 z-50 shadow">
-      <div className="flex items-center space-x-8">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="bg-white rounded-lg p-1 flex items-center justify-center shadow-md">
-            <Image
-              src="/logo-jmvision.png"
-              alt="JM Vision"
-              width={40}   // Aumenta el tamaño del logo aquí
-              height={48}
-              style={{ objectFit: "contain" }}
-              priority
-            />
-          </div>
-          <span className="text-white text-xl font-bold tracking-wide">JM Vision</span>
+    <nav className="w-full bg-[#003087] text-white shadow flex items-center justify-between px-6 py-2 z-50 fixed top-0 left-0">
+      <div className="flex items-center gap-4">
+        <img
+          src="/logo-jmvision.png"
+          alt="JM Vision Logo"
+          className="h-10 w-10 rounded-full bg-white p-1"
+        />
+        <span className="text-xl font-bold tracking-wide">JM Vision</span>
+        <Link href="/dashboard/estudiante" className="ml-6 hover:underline">
+          Dashboard
         </Link>
-        <Link href="/dashboard" className="text-white hover:text-[#00B7EB] transition">Dashboard</Link>
-        <Link href="/reportes" className="text-white hover:text-[#00B7EB] transition">Reportes</Link>
-        <Link href="/perfil" className="text-white hover:text-[#00B7EB] transition">Perfil</Link>
+        <Link href="/dashboard/reportes" className="hover:underline">
+          Reportes
+        </Link>
+        <Link href="/dashboard/perfil" className="hover:underline">
+          Perfil
+        </Link>
       </div>
-      <Link href="/logout" className="text-white hover:text-[#28A745] transition font-semibold">
+      <button
+        onClick={handleLogout}
+        className="font-semibold hover:underline transition"
+      >
         Logout
-      </Link>
+      </button>
     </nav>
   );
 }

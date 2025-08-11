@@ -3,7 +3,7 @@ import { FiSearch, FiFilter, FiList } from "react-icons/fi";
 
 export default function StudentDashboardHeader() {
   return (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
       <div>
         <h1 className="text-3xl font-bold text-[#003087] tracking-wide mb-1">
           Mis Cursos

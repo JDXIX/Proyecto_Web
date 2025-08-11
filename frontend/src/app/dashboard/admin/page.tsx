@@ -31,10 +31,11 @@ export default function AdminDashboard() {
 
   return (
     <ProtectedRoute allowedRoles={["admin", "administrador"]} user={user}>
-      <div className="p-8 w-full max-w-3xl mx-auto">
+      <div className="w-full h-full p-4 md:p-8">
         <h1 className="text-3xl font-bold text-[#003087] mb-6">Panel de Administrador</h1>
         <p className="mb-8 text-lg text-gray-700">
           Bienvenido al panel de administración. Selecciona una sección del menú lateral para gestionar usuarios, cursos o inscripciones.
+          O selecciona una de las opciones a continuación.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link href="/dashboard/admin/usuarios">

@@ -1,55 +1,34 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaUsers, FaBook, FaUserCheck } from "react-icons/fa";
+import { FiUsers, FiBookOpen, FiBarChart2 } from "react-icons/fi";
 
-const menu = [
-  {
-    label: "Gestión de Usuarios",
-    href: "/dashboard/admin/usuarios",
-    icon: <FaUsers className="inline mr-2" />,
-  },
-  {
-    label: "Inscripción de Estudiantes",
-    href: "/dashboard/admin/inscripciones",
-    icon: <FaUserCheck className="inline mr-2" />,
-  },
-  {
-    label: "Gestión de Cursos",
-    href: "/dashboard/admin/cursos",
-    icon: <FaBook className="inline mr-2" />,
-  },
+const links = [
+  { href: "/dashboard/admin/usuarios", label: "Gestión de Usuarios", icon: <FiUsers /> },
+  { href: "/dashboard/admin/inscripciones", label: "Inscripción de Estudiantes", icon: <FiBookOpen /> },
+  { href: "/dashboard/admin/cursos", label: "Gestión de Cursos", icon: <FiBarChart2 /> },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-white shadow-lg flex flex-col min-h-screen">
-      <div className="px-6 py-8 border-b border-gray-200">
-        <Link href="/dashboard/admin">
-          <span className="text-2xl font-bold text-[#003087] cursor-pointer">Panel Admin</span>
-        </Link>
-      </div>
-      <nav className="flex-1 px-4 py-6">
-        <ul className="space-y-2">
-          {menu.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
-                  pathname.startsWith(item.href)
-                    ? "bg-[#003087] text-white"
-                    : "text-[#003087] hover:bg-[#e6f0fa]"
-                }`}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+    <aside className="w-full md:w-64 bg-white border-r border-[#E6F0FA] min-h-screen p-6">
+      <nav className="flex flex-col gap-4">
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium text-[#003087] hover:bg-[#E6F0FA] transition ${
+              pathname.startsWith(link.href) ? "bg-[#D3F3FF] font-bold" : ""
+            }`}
+          >
+            <span className="text-xl">{link.icon}</span>
+            {link.label}
+          </Link>
+        ))}
       </nav>
     </aside>
   );

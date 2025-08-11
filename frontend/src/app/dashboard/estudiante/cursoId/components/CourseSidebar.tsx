@@ -60,7 +60,7 @@ export default function CourseSidebar({
           <div className="w-12 h-12 rounded-full bg-[#E6F0FA] flex items-center justify-center">
             <svg className="w-8 h-8 text-[#00B7EB]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" stroke="#00B7EB" strokeWidth="2" fill="#E6F0FA" />
-              <path d="M8 15h8M8 11h8M8 7h8" stroke="#003087" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M8 12h8M12 8v8" stroke="#003087" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
         )}
@@ -115,7 +115,6 @@ export default function CourseSidebar({
                                   <path d="M8 12h8M12 8v8" stroke="#003087" strokeWidth="2" />
                                 </svg>
                               )}
-                              {/* Otros tipos de recurso pueden agregarse aquí */}
                             </span>
                             <button
                               className={`flex-1 text-left px-1 py-1 rounded hover:bg-[#E6F0FA] transition ${

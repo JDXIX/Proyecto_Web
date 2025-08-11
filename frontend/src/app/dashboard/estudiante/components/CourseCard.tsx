@@ -8,8 +8,8 @@ interface CourseCardProps {
     id: number | string;
     nombre: string;
     descripcion?: string;
-    icono?: string; // URL o nombre de icono, opcional
-    imagen?: string; // URL de imagen, opcional
+    icono?: string;
+    imagen?: string;
   };
 }
 
@@ -22,11 +22,13 @@ export default function CourseCard({ curso }: CourseCardProps) {
 
   return (
     <div
-      className="flex flex-col items-center cursor-pointer group"
+      className="flex flex-col items-center cursor-pointer group p-4 rounded-xl bg-white shadow-md hover:shadow-xl transition border border-[#E6F0FA] focus:outline-none focus:ring-2 focus:ring-[#003087]"
       onClick={handleClick}
       tabIndex={0}
       role="button"
       onKeyDown={e => (e.key === "Enter" ? handleClick() : undefined)}
+      title={curso.nombre}
+      style={{ minWidth: 220, maxWidth: 260 }}
     >
       <div className="rounded-full bg-white shadow-lg border-4 border-[#00B7EB] w-28 h-28 flex items-center justify-center mb-3 transition group-hover:shadow-2xl group-hover:scale-105">
         {curso.imagen ? (
@@ -36,7 +38,6 @@ export default function CourseCard({ curso }: CourseCardProps) {
             className="w-20 h-20 object-contain rounded-full"
           />
         ) : (
-          // Ícono por defecto si no hay imagen
           <svg
             className="w-16 h-16 text-[#003087]"
             fill="none"
@@ -55,12 +56,15 @@ export default function CourseCard({ curso }: CourseCardProps) {
           </svg>
         )}
       </div>
-      <div className="text-center">
-        <span className="block text-lg font-semibold text-[#003087] truncate w-32">
+      <div className="text-center w-full">
+        <span
+          className="block text-lg font-semibold text-[#003087] break-words"
+          style={{ wordBreak: "break-word" }}
+        >
           {curso.nombre}
         </span>
         {curso.descripcion && (
-          <span className="block text-xs text-gray-500 mt-1 truncate w-32">
+          <span className="block text-xs text-gray-500 mt-1 break-words" style={{ wordBreak: "break-word" }}>
             {curso.descripcion}
           </span>
         )}
