@@ -7,11 +7,24 @@ from .serializers import CursoSerializer, NivelSerializer, FaseSerializer, Recur
 from usuarios.models import Usuario
 import csv
 
+# ...existing code...
+
 class CursoViewSet(viewsets.ModelViewSet):
     queryset = Curso.objects.all()
     serializer_class = CursoSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @action(detail=False, methods=["get"], url_path="docente", permission_classes=[permissions.IsAuthenticated])
+    def cursos_docente(self, request):
+        """
+        Retorna los cursos asignados al docente autenticado.
+        """
+        usuario = request.user
+        cursos = Curso.objects.filter(docente=usuario)
+        serializer = self.get_serializer(cursos, many=True)
+        return Response(serializer.data)
+
+# ...rest of your code...
 class NivelViewSet(viewsets.ModelViewSet):
     queryset = Nivel.objects.all()
     serializer_class = NivelSerializer
