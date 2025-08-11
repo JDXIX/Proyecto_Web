@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiSearch, FiFilter, FiList } from "react-icons/fi";
+import { FiSearch, FiList } from "react-icons/fi";
 import { getCursos } from "@/services/cursos";
+import Link from "next/link";
 
 export default function EstudianteDashboard() {
   const [cursos, setCursos] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
-  const [showFilter, setShowFilter] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -55,29 +55,23 @@ export default function EstudianteDashboard() {
         >
           <FiList className="text-2xl text-[#003087]" />
         </button>
-        {/* Filtro (puedes expandir esto según tus necesidades) */}
-        <button
-          onClick={() => setShowFilter(!showFilter)}
-          className="p-2 rounded hover:bg-[#e6f0fa] transition"
-          title="Filtrar"
-        >
-          <FiFilter className="text-2xl text-[#003087]" />
-        </button>
-        {showFilter && (
-          <div className="absolute mt-12 bg-white border rounded shadow p-4 z-50">
-            {/* Aquí puedes poner filtros adicionales */}
-            <div className="text-sm text-gray-700">Aquí van los filtros...</div>
-          </div>
-        )}
       </div>
       {/* Cursos */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {cursosFiltrados.map(curso => (
-          <div key={curso.id} className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-            {/* Aquí tu contenido de cada curso */}
-            <div className="text-2xl font-bold text-[#003087] mb-2">{curso.nombre}</div>
-            <div className="text-gray-600">{curso.descripcion}</div>
-          </div>
+          <Link
+            key={curso.id}
+            href={`/dashboard/estudiante/${curso.id}`}
+            className="bg-white rounded-lg shadow p-6 flex flex-col items-center hover:shadow-lg transition cursor-pointer"
+          >
+            {/* Ícono circular con imagen (si tienes imagen, cámbiala aquí) */}
+            <div className="w-24 h-24 rounded-full bg-[#E6F0FA] flex items-center justify-center mb-4 shadow">
+              {/* Puedes reemplazar el emoji por una imagen si tienes curso.imagen */}
+              <span className="text-4xl text-[#00B7EB]">📘</span>
+            </div>
+            <div className="text-xl font-bold text-[#003087] mb-2 text-center">{curso.nombre}</div>
+            <div className="text-gray-600 text-center">{curso.descripcion}</div>
+          </Link>
         ))}
       </div>
     </div>
