@@ -30,9 +30,18 @@ export async function eliminarCurso(id: string, token: string) {
   });
 }
 
-export async function getCursoDetalle(cursoId: string | number, token: string) {
-  const res = await axios.get(`${API_URL}${cursoId}/detalle/`, {
-    headers: { Authorization: `Bearer ${token}` }
+// ...existing code...
+
+export async function getCursoDetalle(token: string, cursoId: string) {
+  const res = await fetch(`/api/cursos/${cursoId}/detalle/`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
-  return res.data;
+  return res.json();
+}
+
+export async function getRecursoDetalle(token: string, recursoId: string) {
+  const res = await fetch(`/api/recursos/${recursoId}/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.json();
 }
