@@ -7,8 +7,6 @@ from .serializers import CursoSerializer, NivelSerializer, FaseSerializer, Recur
 from usuarios.models import Usuario
 import csv
 
-# ...existing code...
-
 class CursoViewSet(viewsets.ModelViewSet):
     queryset = Curso.objects.all()
     serializer_class = CursoSerializer
@@ -24,7 +22,27 @@ class CursoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(cursos, many=True)
         return Response(serializer.data)
 
-# ...rest of your code...
+    @action(detail=True, methods=["get"], url_path="estudiantes", permission_classes=[permissions.IsAuthenticated])
+    def estudiantes(self, request, pk=None):
+        """
+        Retorna los estudiantes inscritos en el curso.
+        """
+        curso = self.get_object()
+        inscripciones = Inscripcion.objects.filter(curso=curso)
+        data = [
+            {
+                "id": insc.estudiante.id,
+                "nombre": (
+                    (insc.estudiante.first_name or "") + " " + (insc.estudiante.last_name or "")
+                ).strip() or insc.estudiante.username,
+                "email": insc.estudiante.email,
+                "progreso": getattr(insc, "progreso", 0),  # Ajusta según tu modelo
+                "estado": getattr(insc, "estado", "Listo"), # Ajusta según tu modelo
+            }
+            for insc in inscripciones
+        ]
+        return Response(data)
+
 class NivelViewSet(viewsets.ModelViewSet):
     queryset = Nivel.objects.all()
     serializer_class = NivelSerializer
