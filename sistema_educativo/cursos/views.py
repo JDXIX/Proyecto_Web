@@ -48,15 +48,36 @@ class NivelViewSet(viewsets.ModelViewSet):
     serializer_class = NivelSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        curso_id = self.request.query_params.get("curso")
+        if curso_id:
+            queryset = queryset.filter(curso_id=curso_id)
+        return queryset
+
 class FaseViewSet(viewsets.ModelViewSet):
     queryset = Fase.objects.all()
     serializer_class = FaseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        nivel_id = self.request.query_params.get("nivel")
+        if nivel_id:
+            queryset = queryset.filter(nivel_id=nivel_id)
+        return queryset
+
 class RecursoViewSet(viewsets.ModelViewSet):
     queryset = Recurso.objects.all()
     serializer_class = RecursoSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        fase_id = self.request.query_params.get("fase")
+        if fase_id:
+            queryset = queryset.filter(fase_id=fase_id)
+        return queryset
 
 class InscripcionViewSet(viewsets.ModelViewSet):
     queryset = Inscripcion.objects.all()

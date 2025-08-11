@@ -31,14 +31,14 @@ export async function eliminarCurso(id: string, token: string) {
 }
 
 export async function getCursoDetalle(token: string, cursoId: string) {
-  const res = await fetch(`/api/cursos/${cursoId}/detalle/`, {
+  const res = await fetch(`${API_URL}${cursoId}/`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.json();
 }
 
 export async function getRecursoDetalle(token: string, recursoId: string) {
-  const res = await fetch(`/api/recursos/${recursoId}/`, {
+  const res = await fetch(`http://localhost:8000/api/recursos/${recursoId}/`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.json();
@@ -50,8 +50,6 @@ export async function getCursosDocente(token: string) {
   });
   return res.data;
 }
-
-// ...existing code...
 
 // Obtener detalle de un curso (para docente)
 export async function getCursoDetalleDocente(cursoId: string, token: string) {

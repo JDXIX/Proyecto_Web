@@ -1,96 +1,152 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { FiChevronDown, FiChevronRight, FiBookOpen, FiFileText, FiPlayCircle, FiFile } from "react-icons/fi";
-import { getCursoDetalle } from "@/services/cursos"; // Debes tener este servicio
+import { getNiveles, getLecciones, getRecursos } from "@/services/cursos";
+import { useSearchParams, useRouter } from "next/navigation";
 
-function getIcon(tipo: string) {
-  switch (tipo) {
-    case "video": return <FiPlayCircle />;
-    case "quiz": return <FiFileText />;
-    case "pdf": return <FiFile />;
-    default: return <FiBookOpen />;
-  }
+interface Nivel {
+  id: string;
+  nombre: string;
+  orden: number;
+}
+
+interface Leccion {
+  id: string;
+  nombre: string;
+  nivel: string;
+}
+
+interface Recurso {
+  id: string;
+  nombre: string;
+  tipo: string;
 }
 
 export default function CourseSidebar({ cursoId }: { cursoId: string }) {
-  const [curso, setCurso] = useState<any>(null);
-  const [openNivel, setOpenNivel] = useState<string | null>(null);
-  const [openLeccion, setOpenLeccion] = useState<string | null>(null);
+  const [niveles, setNiveles] = useState<Nivel[]>([]);
+  const [expandedNiveles, setExpandedNiveles] = useState<string[]>([]);
+  const [lecciones, setLecciones] = useState<{ [nivelId: string]: Leccion[] }>({});
+  const [expandedLecciones, setExpandedLecciones] = useState<string[]>([]);
+  const [recursos, setRecursos] = useState<{ [leccionId: string]: Recurso[] }>({});
+  const [loading, setLoading] = useState(true);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const recursoActivo = searchParams.get("recurso");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      getCursoDetalle(token, cursoId).then(setCurso);
-    }
+    if (!token) return;
+    setLoading(true);
+    getNiveles(cursoId, token).then(nivelesData => {
+      setNiveles(nivelesData);
+      setLoading(false);
+    });
   }, [cursoId]);
 
-  if (!curso) {
-    return (
-      <aside className="w-72 bg-white border-r p-4">
-        <div className="font-bold text-[#003087] mb-4">Cargando...</div>
-      </aside>
+  const handleExpandNivel = (nivelId: string) => {
+    setExpandedNiveles(prev =>
+      prev.includes(nivelId) ? prev.filter(id => id !== nivelId) : [...prev, nivelId]
     );
+    if (!lecciones[nivelId]) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        getLecciones(nivelId, token).then(lecs =>
+          setLecciones(prev => ({ ...prev, [nivelId]: lecs }))
+        );
+      }
+    }
+  };
+
+  const handleExpandLeccion = (leccionId: string) => {
+    setExpandedLecciones(prev =>
+      prev.includes(leccionId) ? prev.filter(id => id !== leccionId) : [...prev, leccionId]
+    );
+    if (!recursos[leccionId]) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        getRecursos(leccionId, token).then(recs =>
+          setRecursos(prev => ({ ...prev, [leccionId]: recs }))
+        );
+      }
+    }
+  };
+
+  const handleRecursoClick = (recursoId: string) => {
+    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    params.set("recurso", recursoId);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+
+  if (loading) {
+    return <div className="p-4">Cargando estructura...</div>;
   }
 
   return (
-    <aside className="w-72 bg-white border-r border-[#E6F0FA] p-4 flex flex-col">
-      {/* Icono y nombre del curso */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-full bg-[#E6F0FA] flex items-center justify-center shadow">
-          <span className="text-2xl text-[#00B7EB]">📘</span>
-        </div>
-        <div className="font-bold text-lg text-[#003087]">{curso.nombre}</div>
+    <aside className="w-72 bg-white border-r p-4 h-full">
+      <h2 className="text-xl font-bold mb-4 text-[#003087]">Estructura del Curso</h2>
+      <div>
+        {niveles.length === 0 && (
+          <div className="text-gray-500">No hay niveles en este curso.</div>
+        )}
+        {niveles
+          .sort((a, b) => a.orden - b.orden)
+          .map(nivel => (
+            <div key={nivel.id} className="mb-2">
+              <button
+                className="font-semibold text-[#003087] focus:outline-none"
+                onClick={() => handleExpandNivel(nivel.id)}
+              >
+                {expandedNiveles.includes(nivel.id) ? "▼" : "►"} {nivel.nombre}
+              </button>
+              {/* Lecciones */}
+              {expandedNiveles.includes(nivel.id) && lecciones[nivel.id] && (
+                <div className="ml-4 mt-1">
+                  {lecciones[nivel.id].length === 0 && (
+                    <div className="text-gray-400 text-sm">Sin lecciones</div>
+                  )}
+                  {lecciones[nivel.id].map(leccion => (
+                    <div key={leccion.id} className="mb-1">
+                      <button
+                        className="text-[#00B7EB] focus:outline-none"
+                        onClick={() => handleExpandLeccion(leccion.id)}
+                      >
+                        {expandedLecciones.includes(leccion.id) ? "▼" : "►"} {leccion.nombre}
+                      </button>
+                      {/* Recursos */}
+                      {expandedLecciones.includes(leccion.id) && recursos[leccion.id] && (
+                        <ul className="ml-4 mt-1">
+                          {recursos[leccion.id].length === 0 && (
+                            <li className="text-gray-400 text-xs">Sin recursos</li>
+                          )}
+                          {recursos[leccion.id].map(recurso => (
+                            <li key={recurso.id} className="flex items-center gap-2">
+                              <button
+                                className={`text-gray-700 hover:underline focus:outline-none ${
+                                  recursoActivo === recurso.id ? "font-bold text-[#003087]" : ""
+                                }`}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  padding: 0,
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => handleRecursoClick(recurso.id)}
+                              >
+                                {recurso.nombre}
+                              </button>
+                              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">{recurso.tipo}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
       </div>
-      {/* Niveles */}
-      <nav className="flex-1">
-        {curso.niveles?.map((nivel: any) => (
-          <div key={nivel.id} className="mb-2">
-            <button
-              className="flex items-center w-full text-left px-2 py-2 rounded hover:bg-[#e6f0fa] font-semibold text-[#003087] transition"
-              onClick={() => setOpenNivel(openNivel === nivel.id ? null : nivel.id)}
-            >
-              {openNivel === nivel.id ? <FiChevronDown /> : <FiChevronRight />}
-              <span className="ml-2">{nivel.nombre}</span>
-            </button>
-            {/* Lecciones */}
-            {openNivel === nivel.id && (
-              <div className="ml-6">
-                {nivel.lecciones?.map((leccion: any) => (
-                  <div key={leccion.id} className="mb-1">
-                    <button
-                      className="flex items-center w-full text-left px-2 py-1 rounded hover:bg-[#f4f8fb] font-medium text-[#003087] transition"
-                      onClick={() => setOpenLeccion(openLeccion === leccion.id ? null : leccion.id)}
-                    >
-                      {openLeccion === leccion.id ? <FiChevronDown /> : <FiChevronRight />}
-                      <span className="ml-2">{leccion.nombre}</span>
-                    </button>
-                    {/* Recursos */}
-                    {openLeccion === leccion.id && (
-                      <div className="ml-6">
-                        {leccion.recursos?.map((recurso: any) => (
-                          <Link
-                            key={recurso.id}
-                            href={`/dashboard/estudiante/${cursoId}?recurso=${recurso.id}`}
-                            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-[#e6f0fa] text-[#003087] text-sm"
-                          >
-                            {getIcon(recurso.tipo)}
-                            <span>{recurso.nombre}</span>
-                            {recurso.es_evaluable && (
-                              <span className="ml-auto bg-[#00B7EB] text-white text-xs px-2 py-0.5 rounded">Empezar</span>
-                            )}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </nav>
     </aside>
   );
 }
