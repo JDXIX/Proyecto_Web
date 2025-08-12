@@ -173,4 +173,3 @@ if __name__ == "__main__":
     print("Resumen de atención:")
     print(json.dumps(resumen, default=convertir_a_nativo, indent=2))
 
-# Este script monitorea la atención de una persona usando detección facial y landmarks.
