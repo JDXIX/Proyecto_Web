@@ -1,5 +1,7 @@
 "use client";
 
+//Comentario solo para hacer otro comit
+
 import { useEffect, useState } from "react";
 import { getUsuarioActual } from "@/services/usuarios";
 import ProtectedRoute from "@/components/ProtectedRoute";
