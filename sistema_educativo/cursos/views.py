@@ -7,10 +7,18 @@ from .serializers import CursoSerializer, NivelSerializer, FaseSerializer, Recur
 from usuarios.models import Usuario
 import csv
 
+
 class CursoViewSet(viewsets.ModelViewSet):
     queryset = Curso.objects.all()
     serializer_class = CursoSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Solo mostrar cursos en los que el estudiante está inscrito
+        if hasattr(user, "rol") and user.rol == "estudiante":
+            return Curso.objects.filter(inscripcion__estudiante=user).distinct()
+        return super().get_queryset()
 
     @action(detail=False, methods=["get"], url_path="docente", permission_classes=[permissions.IsAuthenticated])
     def cursos_docente(self, request):
