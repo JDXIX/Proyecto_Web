@@ -80,18 +80,18 @@ def crear_sesiones_monitoreo(request):
     try:
         recurso = Recurso.objects.get(id=recurso_id)
         fase = Fase.objects.get(id=fase_id)
-        curso = fase.curso
-        # Busca estudiantes inscritos en el curso
-        estudiantes = Usuario.objects.filter(inscripcion__curso=curso, inscripcion__rol='estudiante')
+        curso = fase.nivel.curso
+        estudiantes = Usuario.objects.filter(
+            inscripciones__curso=curso,
+            rol='estudiante'
+        ).distinct()
         creadas = 0
         for estudiante in estudiantes:
-            # Evita duplicados
             if not SesionMonitoreo.objects.filter(estudiante=estudiante, recurso=recurso, fase=fase).exists():
                 SesionMonitoreo.objects.create(
                     estudiante=estudiante,
                     recurso=recurso,
-                    fase=fase,
-                    curso=curso
+                    fase=fase
                 )
                 creadas += 1
         return Response({'ok': True, 'creadas': creadas})

@@ -25,10 +25,10 @@ router.register(r'historial-estudiantes', HistorialEstudianteViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('atencion.urls')),  # <--- AGREGA ESTA LÍNEA
     path('api/', include(router.urls)),
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-
 ]
 
 if settings.DEBUG:
