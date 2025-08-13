@@ -2,6 +2,7 @@
 
 import { useState, useEffect, ChangeEvent } from "react";
 import { crearRecurso, editarRecurso } from "@/services/cursos";
+import { crearSesionesMonitoreo } from "@/services/monitoreo"; // NUEVO
 
 interface RecursoFormModalProps {
   open: boolean;
@@ -43,6 +44,9 @@ export default function RecursoFormModal({
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [recursoGuardado, setRecursoGuardado] = useState<any>(null);
+  const [creandoSesiones, setCreandoSesiones] = useState(false);
+  const [sesionesMensaje, setSesionesMensaje] = useState<string | null>(null);
 
   useEffect(() => {
     setNombre(recurso?.nombre || "");
@@ -51,11 +55,19 @@ export default function RecursoFormModal({
     setPermiteMonitoreo(recurso?.permite_monitoreo ?? true);
     setArchivo(null);
     setError("");
+    setRecursoGuardado(null);
+    setSesionesMensaje(null);
   }, [recurso, open]);
 
   useEffect(() => {
+    // Si el tipo no permite monitoreo, desmarca monitoreo
     setPermiteMonitoreo(!NO_MONITOREO.includes(tipo));
   }, [tipo]);
+
+  // Si el usuario marca "Es evaluable", fuerza "Permite monitoreo" y lo deshabilita
+  useEffect(() => {
+    if (es_evaluable) setPermiteMonitoreo(true);
+  }, [es_evaluable]);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -67,6 +79,8 @@ export default function RecursoFormModal({
     e.preventDefault();
     setLoading(true);
     setError("");
+    setRecursoGuardado(null);
+    setSesionesMensaje(null);
     const token = localStorage.getItem("token");
     try {
       const formData = new FormData();
@@ -77,17 +91,40 @@ export default function RecursoFormModal({
       formData.append("permite_monitoreo", String(permite_monitoreo));
       if (archivo) formData.append("archivo", archivo);
 
+      let recursoResp;
       if (recurso) {
-        await editarRecurso(recurso.id, formData, token!);
+        recursoResp = await editarRecurso(recurso.id, formData, token!);
       } else {
-        await crearRecurso(formData, token!);
+        recursoResp = await crearRecurso(formData, token!);
       }
+      setRecursoGuardado(recursoResp || recurso); // Guarda el recurso para usar su id
       onSuccess();
-      onClose();
+      // No cerramos el modal para mostrar el botón de crear sesiones
+      // onClose();
     } catch (err: any) {
       setError("Error al guardar el recurso.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Lógica para crear sesiones monitoreo
+  const handleCrearSesiones = async () => {
+    if (!recursoGuardado?.id && !recurso?.id) return;
+    setCreandoSesiones(true);
+    setSesionesMensaje(null);
+    const token = localStorage.getItem("token");
+    try {
+      await crearSesionesMonitoreo({
+        recursoId: recursoGuardado?.id || recurso?.id,
+        faseId: leccionId,
+        // Puedes agregar más campos si tu backend lo requiere
+      }, token!);
+      setSesionesMensaje("Sesiones de monitoreo creadas exitosamente para todos los estudiantes.");
+    } catch (err: any) {
+      setSesionesMensaje("Error al crear sesiones de monitoreo.");
+    } finally {
+      setCreandoSesiones(false);
     }
   };
 
@@ -150,6 +187,18 @@ export default function RecursoFormModal({
             Es evaluable (nota académica)
           </label>
         </div>
+        <div className="mb-4 flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={permite_monitoreo}
+            disabled={es_evaluable || NO_MONITOREO.includes(tipo)}
+            onChange={e => setPermiteMonitoreo(e.target.checked)}
+            id="permite_monitoreo"
+          />
+          <label htmlFor="permite_monitoreo" className="font-medium">
+            Permite monitoreo
+          </label>
+        </div>
         {!permite_monitoreo && (
           <div className="mb-4 text-yellow-700 bg-yellow-100 px-3 py-2 rounded text-sm">
             Advertencia: Este recurso no permite monitoreo de atención.
@@ -173,6 +222,24 @@ export default function RecursoFormModal({
             {recurso ? "Guardar Cambios" : "Crear Recurso"}
           </button>
         </div>
+        {/* Botón para crear sesiones monitoreo */}
+        {(recursoGuardado?.es_evaluable || recurso?.es_evaluable) && (recursoGuardado?.permite_monitoreo || recurso?.permite_monitoreo) && (
+          <div className="mt-6 flex flex-col items-center">
+            <button
+              type="button"
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              onClick={handleCrearSesiones}
+              disabled={creandoSesiones}
+            >
+              {creandoSesiones ? "Creando sesiones..." : "Crear sesión monitoreo"}
+            </button>
+            {sesionesMensaje && (
+              <div className={`mt-2 text-sm ${sesionesMensaje.startsWith("Error") ? "text-red-600" : "text-green-700"}`}>
+                {sesionesMensaje}
+              </div>
+            )}
+          </div>
+        )}
       </form>
     </div>
   );

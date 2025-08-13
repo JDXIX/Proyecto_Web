@@ -1,13 +1,16 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from .models import SesionMonitoreo, AtencionVisual
 from .serializers import SesionMonitoreoSerializer, AtencionVisualSerializer
 from django.utils import timezone
 
 # Importa el script actualizado
 from atencion.scripts.deteccion_facial import monitorear_atencion_durante_tiempo
+
+from cursos.models import Recurso, Fase, Curso, Inscripcion
+from usuarios.models import Usuario
 
 class SesionMonitoreoViewSet(viewsets.ModelViewSet):
     queryset = SesionMonitoreo.objects.all()
@@ -65,6 +68,35 @@ class SesionMonitoreoViewSet(viewsets.ModelViewSet):
             return Response({"error": "Sesión no encontrada"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# NUEVO: Endpoint para crear sesiones de monitoreo masivas
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def crear_sesiones_monitoreo(request):
+    recurso_id = request.data.get('recurso')
+    fase_id = request.data.get('fase')
+    if not recurso_id or not fase_id:
+        return Response({'error': 'Faltan datos'}, status=400)
+    try:
+        recurso = Recurso.objects.get(id=recurso_id)
+        fase = Fase.objects.get(id=fase_id)
+        curso = fase.curso
+        # Busca estudiantes inscritos en el curso
+        estudiantes = Usuario.objects.filter(inscripcion__curso=curso, inscripcion__rol='estudiante')
+        creadas = 0
+        for estudiante in estudiantes:
+            # Evita duplicados
+            if not SesionMonitoreo.objects.filter(estudiante=estudiante, recurso=recurso, fase=fase).exists():
+                SesionMonitoreo.objects.create(
+                    estudiante=estudiante,
+                    recurso=recurso,
+                    fase=fase,
+                    curso=curso
+                )
+                creadas += 1
+        return Response({'ok': True, 'creadas': creadas})
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
 
 class AtencionVisualViewSet(viewsets.ModelViewSet):
     queryset = AtencionVisual.objects.all()

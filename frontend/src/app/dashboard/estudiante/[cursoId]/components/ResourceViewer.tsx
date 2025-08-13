@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getRecursoDetalle } from "@/services/cursos";
+import { iniciarMonitoreo } from "@/services/monitoreo"; // Asegúrate de tener este servicio
 
 interface Recurso {
   id: string;
@@ -12,6 +13,8 @@ interface Recurso {
   archivo_url?: string;
   nivel_nombre?: string;
   leccion_nombre?: string;
+  permite_monitoreo?: boolean;
+  es_evaluable?: boolean;
 }
 
 export default function ResourceViewer({ cursoId }: { cursoId: string }) {
@@ -19,6 +22,10 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
   const recursoId = searchParams.get("recurso");
   const [recurso, setRecurso] = useState<Recurso | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Estado para monitoreo
+  const [monitoreoLoading, setMonitoreoLoading] = useState(false);
+  const [monitoreoResultado, setMonitoreoResultado] = useState<any>(null);
 
   useEffect(() => {
     if (!recursoId) {
@@ -32,6 +39,8 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
       setRecurso(data);
       setLoading(false);
     });
+    setMonitoreoResultado(null);
+    setMonitoreoLoading(false);
   }, [recursoId]);
 
   if (!recursoId) {
@@ -57,6 +66,24 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
     height: "500px",
     objectFit: "contain" as const,
     background: "black",
+  };
+
+  // Mostrar botón solo si permite monitoreo y es evaluable
+  const mostrarBotonEmpezar = recurso.permite_monitoreo && recurso.es_evaluable;
+
+  const handleEmpezar = async () => {
+    setMonitoreoLoading(true);
+    setMonitoreoResultado(null);
+    try {
+      const token = localStorage.getItem("token");
+      const sesionId = localStorage.getItem("sesionId"); // Ajusta según tu flujo real
+      if (!sesionId || !token) throw new Error("Sesión o token no disponible");
+      const res = await iniciarMonitoreo(sesionId, 85, token); // 85 es un ejemplo de score
+      setMonitoreoResultado(res.patrones);
+    } catch (e: any) {
+      setMonitoreoResultado({ error: e.message || "Error al monitorear atención" });
+    }
+    setMonitoreoLoading(false);
   };
 
   return (
@@ -125,6 +152,28 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
         {/* Descripción */}
         {recurso.descripcion && (
           <div className="text-gray-700">{recurso.descripcion}</div>
+        )}
+
+        {/* Botón Empezar y feedback monitoreo */}
+        {mostrarBotonEmpezar && (
+          <div className="mt-6">
+            <button
+              className="bg-blue-700 text-white px-5 py-2 rounded hover:bg-blue-800 transition"
+              onClick={handleEmpezar}
+              disabled={monitoreoLoading}
+            >
+              {monitoreoLoading ? "Monitoreando..." : "Empezar"}
+            </button>
+            {monitoreoResultado && (
+              <div className="mt-4 bg-gray-100 p-3 rounded text-sm">
+                {monitoreoResultado.error ? (
+                  <span className="text-red-600">{monitoreoResultado.error}</span>
+                ) : (
+                  <pre className="overflow-x-auto">{JSON.stringify(monitoreoResultado, null, 2)}</pre>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
