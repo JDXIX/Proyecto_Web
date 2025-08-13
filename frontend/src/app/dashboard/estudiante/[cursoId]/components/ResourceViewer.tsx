@@ -3,8 +3,27 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getRecursoDetalle } from "@/services/cursos";
-import { iniciarMonitoreo } from "@/services/monitoreo"; // Asegúrate de tener este servicio
+import { iniciarMonitoreo } from "@/services/monitoreo";
 
+// Función para obtener la sesión de monitoreo del estudiante para este recurso
+async function obtenerSesionMonitoreo(recursoId: string, token: string) {
+  const res = await fetch(
+    `http://localhost:8000/api/sesiones/?recurso=${recursoId}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  const data = await res.json();
+  // Si data es un array, toma el primer elemento
+  if (Array.isArray(data) && data.length > 0) {
+    return data[0].id;
+  }
+  // Si data tiene results (por si cambias el backend), también lo soporta
+  if (data.results && data.results.length > 0) {
+    return data.results[0].id;
+  }
+  return null;
+}
 interface Recurso {
   id: string;
   nombre: string;
@@ -27,9 +46,16 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
   const [monitoreoLoading, setMonitoreoLoading] = useState(false);
   const [monitoreoResultado, setMonitoreoResultado] = useState<any>(null);
 
+  // Estado para sesionId (automático)
+  const [sesionId, setSesionId] = useState<string | null>(null);
+
+  // Estado para consentimiento
+  const [mostrarConsentimiento, setMostrarConsentimiento] = useState(false);
+
   useEffect(() => {
     if (!recursoId) {
       setRecurso(null);
+      setSesionId(null);
       return;
     }
     const token = localStorage.getItem("token");
@@ -41,6 +67,12 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
     });
     setMonitoreoResultado(null);
     setMonitoreoLoading(false);
+
+    // Obtener la sesión de monitoreo para este recurso y estudiante
+    obtenerSesionMonitoreo(recursoId, token).then((id) => {
+      console.log("SesionId obtenido:", id); // <-- Depuración
+      setSesionId(id);
+    });
   }, [recursoId]);
 
   if (!recursoId) {
@@ -71,12 +103,21 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
   // Mostrar botón solo si permite monitoreo y es evaluable
   const mostrarBotonEmpezar = recurso.permite_monitoreo && recurso.es_evaluable;
 
-  const handleEmpezar = async () => {
-    setMonitoreoLoading(true);
+  // Paso 1: Mostrar consentimiento antes de monitorear
+  const handleEmpezar = () => {
+    console.log("Clic en Empezar, sesionId:", sesionId); // <-- Depuración
     setMonitoreoResultado(null);
+    setMonitoreoLoading(false);
+    setMostrarConsentimiento(true);
+  };
+
+  // Paso 2: Si acepta, iniciar monitoreo
+  const handleAceptarConsentimiento = async () => {
+    setMostrarConsentimiento(false);
+    setMonitoreoLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const sesionId = localStorage.getItem("sesionId"); // Ajusta según tu flujo real
+      console.log("POST monitoreo con sesionId:", sesionId, "token:", token); // <-- Depuración
       if (!sesionId || !token) throw new Error("Sesión o token no disponible");
       const res = await iniciarMonitoreo(sesionId, 85, token); // 85 es un ejemplo de score
       setMonitoreoResultado(res.patrones);
@@ -84,6 +125,11 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
       setMonitoreoResultado({ error: e.message || "Error al monitorear atención" });
     }
     setMonitoreoLoading(false);
+  };
+
+  // Si cancela, solo cierra el modal
+  const handleCancelarConsentimiento = () => {
+    setMostrarConsentimiento(false);
   };
 
   return (
@@ -160,10 +206,42 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
             <button
               className="bg-blue-700 text-white px-5 py-2 rounded hover:bg-blue-800 transition"
               onClick={handleEmpezar}
-              disabled={monitoreoLoading}
+              disabled={monitoreoLoading || !sesionId}
             >
               {monitoreoLoading ? "Monitoreando..." : "Empezar"}
             </button>
+            {/* Modal de consentimiento */}
+            {mostrarConsentimiento && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
+                  <h3 className="text-lg font-bold mb-2 text-[#003087]">
+                    Consentimiento para Monitoreo
+                  </h3>
+                  <p className="mb-4">
+                    ¿Acepta que se realice el monitoreo de atención durante el uso de este recurso?
+                    <br />
+                    <span className="text-xs text-gray-500">
+                      (Conforme a la norma ISO 21001:2018)
+                    </span>
+                  </p>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                      onClick={handleCancelarConsentimiento}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      className="px-4 py-2 rounded bg-blue-700 text-white hover:bg-blue-800"
+                      onClick={handleAceptarConsentimiento}
+                    >
+                      Aceptar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Resultado monitoreo */}
             {monitoreoResultado && (
               <div className="mt-4 bg-gray-100 p-3 rounded text-sm">
                 {monitoreoResultado.error ? (

@@ -17,6 +17,18 @@ class SesionMonitoreoViewSet(viewsets.ModelViewSet):
     serializer_class = SesionMonitoreoSerializer
     permission_classes = [IsAuthenticated]
 
+    # MODIFICADO: Solo devuelve sesiones del estudiante autenticado para el recurso
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        recurso = self.request.query_params.get("recurso")
+        # Si el usuario es estudiante, filtra por él
+        if hasattr(user, "rol") and user.rol == "estudiante":
+            qs = qs.filter(estudiante=user)
+        if recurso:
+            qs = qs.filter(recurso_id=recurso)
+        return qs
+
     @action(detail=True, methods=['post'], url_path='monitoreo-atencion')
     def monitoreo_atencion(self, request, pk=None):
         sesion_id = pk or request.data.get('sesion_id')
