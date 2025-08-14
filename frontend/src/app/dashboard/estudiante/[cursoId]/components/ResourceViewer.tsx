@@ -90,12 +90,19 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
 
   // Consulta la nota combinada siempre que haya recurso y estudiante
   useEffect(() => {
+    console.log("Intentando obtener nota combinada", { estudianteId, recursoId, monitoreoResultado });
     if (recursoId && estudianteId) {
       const token = localStorage.getItem("token");
       if (!token) return;
       obtenerNotaCombinada(estudianteId, recursoId, token)
-        .then((data) => setNotaCombinada(data))
-        .catch(() => setNotaCombinada(null));
+        .then((data) => {
+          console.log("Respuesta de nota combinada:", data);
+          setNotaCombinada(data);
+        })
+        .catch((err) => {
+          console.error("Error obteniendo nota combinada:", err);
+          setNotaCombinada(null);
+        });
     }
   }, [recursoId, estudianteId, monitoreoResultado]);
 
@@ -294,7 +301,7 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
               <span className="text-red-600">{monitoreoResultado.error}</span>
             ) : (
               <span className="text-green-700 font-semibold">
-                Monitoreo finalizado. ¡Gracias por tu participación!"
+                Monitoreo finalizado. ¡Gracias por tu participación!
               </span>
             )}
           </div>
