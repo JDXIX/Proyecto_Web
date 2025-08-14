@@ -231,7 +231,7 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
                 ¿Acepta que se realice el monitoreo de atención durante el uso de este recurso?
                 <br />
                 <span className="text-xs text-gray-500">
-                  (Conforme a la norma ISO 21001:2018)
+                  (Recuerde que el monitoreo y el recurso empezara inmediatamente ingrese al recurso)
                 </span>
               </p>
               <div className="flex justify-end gap-2">
