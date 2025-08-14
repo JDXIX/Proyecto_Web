@@ -31,18 +31,22 @@ class SesionMonitoreoViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='monitoreo-atencion')
     def monitoreo_atencion(self, request, pk=None):
-        sesion_id = pk or request.data.get('sesion_id')
-        atencion = request.data.get('atencion')
-        duracion = request.data.get('duracion')  # <-- Recibe duración del frontend
+        """
+        Ejecuta el monitoreo visual y calcula el score de atención con la fórmula:
+          score = 100 - (0.4*desviacion + 0.3*cierre_ojos + 0.2*cabeza_fuera + 0.1*(100 - presencia))
 
-        if not sesion_id or atencion is None:
-            return Response({"error": "sesion_id y atencion son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
+        Donde todas las métricas están en el rango 0-100. El score se limita a [0, 100].
+        Se guarda el score y los patrones tanto en AtencionVisual como en la SesionMonitoreo.
+        También clasifica por umbrales: Alto (>=80), Medio (50-79), Bajo (<50).
+        """
+        sesion_id = pk or request.data.get('sesion_id')
+        duracion = request.data.get('duracion')  # opcional, en segundos
+
+        if not sesion_id:
+            return Response({"error": "sesion_id es requerido"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             sesion = SesionMonitoreo.objects.get(id=sesion_id)
-            score_atencion = float(atencion)
-            if score_atencion < 0 or score_atencion > 100:
-                return Response({"error": "El score de atención debe estar entre 0 y 100"}, status=status.HTTP_400_BAD_REQUEST)
 
             # Determina la duración a usar
             if duracion is not None:
@@ -50,26 +54,67 @@ class SesionMonitoreoViewSet(viewsets.ModelViewSet):
                     segundos = int(duracion)
                 except Exception:
                     segundos = 30
-            elif sesion.recurso and sesion.recurso.duracion:
+            elif sesion.recurso and getattr(sesion.recurso, "duracion", None):
                 segundos = sesion.recurso.duracion
             else:
                 segundos = 30
 
             # Ejecuta el monitoreo visual con la duración correcta
-            resultados = monitorear_atencion_durante_tiempo(segundos=segundos, mostrar_ventana=False)
+            resultados = monitorear_atencion_durante_tiempo(
+                segundos=segundos,
+                mostrar_ventana=False
+            )
 
+            # Extrae patrones con valores por defecto (0-100)
+            promedio_desviacion = float(resultados.get("promedio_desviacion", 0.0) or 0.0)           # 0..100
+            porcentaje_cierre_ojos = float(resultados.get("porcentaje_cierre_ojos", 0.0) or 0.0)     # 0..100
+            porcentaje_cabeza_fuera = float(resultados.get("porcentaje_cabeza_fuera", 0.0) or 0.0)   # 0..100
+            porcentaje_presencia = float(resultados.get("porcentaje_presencia", 100.0) or 0.0)       # 0..100
+
+            # Ponderaciones
+            pesos = {
+                "desviacion": 0.40,
+                "cierre_ojos": 0.30,
+                "cabeza_fuera": 0.20,
+                "presencia": 0.10,  # se penaliza (100 - presencia)
+            }
+
+            # Cálculo del score (limitado a [0, 100])
+            score_atencion = 100 - (
+                pesos["desviacion"] * promedio_desviacion +
+                pesos["cierre_ojos"] * porcentaje_cierre_ojos +
+                pesos["cabeza_fuera"] * porcentaje_cabeza_fuera +
+                pesos["presencia"] * (100 - porcentaje_presencia)
+            )
+            score_atencion = max(0.0, min(100.0, round(score_atencion, 2)))
+
+            # Clasificación por umbrales
+            # Alto (≥80), Medio (50–79), Bajo (<50)
+            if score_atencion >= 80:
+                nivel_atencion = "ALTO"
+            elif score_atencion >= 50:
+                nivel_atencion = "MEDIO"
+            else:
+                nivel_atencion = "BAJO"
+
+            # Estructura de patrones detallados para persistir
             patrones = {
-                "promedio_desviacion": resultados.get("promedio_desviacion", 0.0),
-                "porcentaje_cierre_ojos": resultados.get("porcentaje_cierre_ojos", 0.0),
-                "porcentaje_cabeza_fuera": resultados.get("porcentaje_cabeza_fuera", 0.0),
-                "porcentaje_presencia": resultados.get("porcentaje_presencia", 0.0),
+                "promedio_desviacion": promedio_desviacion,
+                "porcentaje_cierre_ojos": porcentaje_cierre_ojos,
+                "porcentaje_cabeza_fuera": porcentaje_cabeza_fuera,
+                "porcentaje_presencia": porcentaje_presencia,
                 "total_frames": resultados.get("total_frames", 0),
                 "frames_con_rostro": resultados.get("frames_con_rostro", 0),
                 "frames_ausente": resultados.get("frames_ausente", 0),
                 "inclinacion_promedio": float(
-                    sum([f.get("inclinacion", 0.0) for f in resultados.get("detalle_frames", []) if f.get("inclinacion") is not None]) /
-                    max(1, len([f for f in resultados.get("detalle_frames", []) if f.get("inclinacion") is not None]))
-                ) if resultados.get("detalle_frames") else 0.0
+                    sum(
+                        [f.get("inclinacion", 0.0) for f in resultados.get("detalle_frames", []) if f.get("inclinacion") is not None]
+                    ) / max(1, len([f for f in resultados.get("detalle_frames", []) if f.get("inclinacion") is not None]))
+                ) if resultados.get("detalle_frames") else 0.0,
+                "pesos_utilizados": pesos,
+                "umbrales": {"ALTO": ">=80", "MEDIO": "50-79", "BAJO": "<50"},
+                "nivel_atencion": nivel_atencion,
+                "duracion_segundos": segundos,
             }
 
             # Guardar en la base de datos
@@ -81,13 +126,23 @@ class SesionMonitoreoViewSet(viewsets.ModelViewSet):
                 score_atencion=score_atencion,
                 patrones=patrones
             )
+
             sesion.fin = timezone.now()
             sesion.duracion = sesion.fin - sesion.inicio
             sesion.score_atencion = score_atencion
             sesion.patrones = patrones
             sesion.save()
 
-            return Response({"status": "monitoreo terminado", "patrones": patrones}, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "status": "monitoreo terminado",
+                    "score_atencion": score_atencion,
+                    "nivel_atencion": nivel_atencion,
+                    "patrones": patrones,
+                },
+                status=status.HTTP_200_OK
+            )
+
         except SesionMonitoreo.DoesNotExist:
             return Response({"error": "Sesión no encontrada"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:

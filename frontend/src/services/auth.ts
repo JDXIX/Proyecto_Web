@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_URL = "http://localhost:8000/api/token/";
 const REGISTER_URL = "http://localhost:8000/api/usuarios/";
-const PERFIL_URL = "http://localhost:8000/api/perfil/";
+const PERFIL_URL = "http://localhost:8000/api/usuarios/me/";
 
 // Login: obtiene el token y luego el perfil para guardar el user_id
 export async function login(username: string, password: string) {
