@@ -177,6 +177,33 @@ def crear_sesiones_monitoreo(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
+# NUEVO: Crear (o devolver) una sesión de monitoreo para el estudiante autenticado y un recurso
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def crear_sesion_para_mi(request):
+    """
+    Crea (o retorna) una SesionMonitoreo para el estudiante autenticado y el recurso dado.
+    body: { recurso: uuid }
+    """
+    try:
+        user = request.user
+        if not hasattr(user, "rol") or user.rol != "estudiante":
+            return Response({"error": "Solo estudiantes"}, status=403)
+        recurso_id = request.data.get('recurso')
+        if not recurso_id:
+            return Response({"error": "Falta recurso"}, status=400)
+        recurso = Recurso.objects.get(id=recurso_id)
+        sesion, _ = SesionMonitoreo.objects.get_or_create(
+            estudiante=user,
+            recurso=recurso,
+            fase=recurso.fase
+        )
+        return Response({"id": str(sesion.id)}, status=200)
+    except Recurso.DoesNotExist:
+        return Response({"error": "Recurso no encontrado"}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
 class AtencionVisualViewSet(viewsets.ModelViewSet):
     queryset = AtencionVisual.objects.all()
     serializer_class = AtencionVisualSerializer

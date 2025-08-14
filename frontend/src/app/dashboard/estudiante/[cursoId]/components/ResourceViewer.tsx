@@ -3,24 +3,25 @@
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { getRecursoDetalle } from "@/services/cursos";
-import { iniciarMonitoreo, obtenerNotaCombinada } from "@/services/monitoreo";
+import { iniciarMonitoreo, obtenerNotaCombinada, crearSesionParaMi } from "@/services/monitoreo";
 
 async function obtenerSesionMonitoreo(recursoId: string, token: string) {
-  const res = await fetch(
-    `http://localhost:8000/api/sesiones/?recurso=${recursoId}`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
+  const res = await fetch(`http://localhost:8000/api/sesiones/?recurso=${recursoId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   const data = await res.json();
-  if (Array.isArray(data) && data.length > 0) {
-    return data[0].id;
+  if (Array.isArray(data) && data.length > 0) return data[0].id;
+  if (data.results && data.results.length > 0) return data.results[0].id;
+
+  // Si no hay sesión existente, crearla para el estudiante autenticado
+  try {
+    const creada = await crearSesionParaMi(recursoId, token);
+    return creada?.id || null;
+  } catch {
+    return null;
   }
-  if (data.results && data.results.length > 0) {
-    return data.results[0].id;
-  }
-  return null;
 }
+
 interface Recurso {
   id: string;
   nombre: string;
@@ -40,14 +41,12 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
   const [recurso, setRecurso] = useState<Recurso | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Monitoreo y control de recurso
   const [monitoreoEnCurso, setMonitoreoEnCurso] = useState(false);
   const [monitoreoResultado, setMonitoreoResultado] = useState<any>(null);
   const [sesionId, setSesionId] = useState<string | null>(null);
   const [mostrarConsentimiento, setMostrarConsentimiento] = useState(false);
   const [tiempoRestante, setTiempoRestante] = useState<number | null>(null);
 
-  // Estado para la nota combinada
   const [notaCombinada, setNotaCombinada] = useState<{
     score_atencion: number;
     nota_academica: number;
@@ -56,8 +55,8 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Obtén el ID del estudiante desde localStorage (ajusta según tu auth)
-  const estudianteId = typeof window !== "undefined" ? localStorage.getItem("user_id") : null;
+  const estudianteId =
+    typeof window !== "undefined" ? localStorage.getItem("user_id") : null;
 
   useEffect(() => {
     if (!recursoId) {
@@ -67,44 +66,38 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
     }
     const token = localStorage.getItem("token");
     if (!token) return;
+
     setLoading(true);
     getRecursoDetalle(token, recursoId).then((data) => {
       setRecurso(data);
       setLoading(false);
     });
+
     setMonitoreoResultado(null);
     setMonitoreoEnCurso(false);
-
-    obtenerSesionMonitoreo(recursoId, token).then((id) => {
-      setSesionId(id);
-    });
-    setNotaCombinada(null); // Limpia la nota combinada al cambiar de recurso
+    obtenerSesionMonitoreo(recursoId, token).then((id) => setSesionId(id));
+    setNotaCombinada(null);
   }, [recursoId]);
 
   useEffect(() => {
-    // Limpia el timer si el componente se desmonta
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
-  // Consulta la nota combinada siempre que haya recurso y estudiante
+  // Consultar nota combinada SOLO si el recurso es evaluable
   useEffect(() => {
-    console.log("Intentando obtener nota combinada", { estudianteId, recursoId, monitoreoResultado });
-    if (recursoId && estudianteId) {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      obtenerNotaCombinada(estudianteId, recursoId, token)
-        .then((data) => {
-          console.log("Respuesta de nota combinada:", data);
-          setNotaCombinada(data);
-        })
-        .catch((err) => {
-          console.error("Error obteniendo nota combinada:", err);
-          setNotaCombinada(null);
-        });
+    if (!recursoId || !estudianteId) return;
+    if (!recurso?.es_evaluable) {
+      setNotaCombinada(null);
+      return;
     }
-  }, [recursoId, estudianteId, monitoreoResultado]);
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    obtenerNotaCombinada(estudianteId, recursoId, token)
+      .then((data) => setNotaCombinada(data))
+      .catch(() => setNotaCombinada(null));
+  }, [recursoId, estudianteId, recurso?.es_evaluable, monitoreoResultado]);
 
   if (!recursoId) {
     return (
@@ -122,27 +115,25 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
     );
   }
 
-  const mostrarBotonEmpezar = recurso.permite_monitoreo && recurso.es_evaluable;
+  // Mostrar botón si permite monitoreo (aunque no sea evaluable)
+  const mostrarBotonEmpezar = !!recurso.permite_monitoreo;
 
-  // Paso 1: Mostrar consentimiento antes de monitorear
   const handleEmpezar = () => {
     setMonitoreoResultado(null);
     setMostrarConsentimiento(true);
   };
 
-  // Paso 2: Si acepta, iniciar monitoreo y mostrar recurso
   const handleAceptarConsentimiento = async () => {
     setMostrarConsentimiento(false);
     setMonitoreoEnCurso(true);
     setTiempoRestante(recurso?.duracion || 30);
 
-    // Inicia monitoreo en paralelo
     try {
       const token = localStorage.getItem("token");
       if (!sesionId || !token) throw new Error("Sesión o token no disponible");
-      const monitoreoPromise = iniciarMonitoreo(sesionId, 85, token, recurso?.duracion);
 
-      // Timer para controlar la duración del recurso
+      const monitoreoPromise = iniciarMonitoreo(sesionId, token, recurso?.duracion);
+
       timerRef.current = setInterval(() => {
         setTiempoRestante((prev) => {
           if (prev && prev > 1) return prev - 1;
@@ -152,20 +143,17 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
         });
       }, 1000);
 
-      // Espera el resultado del monitoreo
       const res = await monitoreoPromise;
-      setMonitoreoResultado(res?.mensaje || "Monitoreo finalizado.");
+      setMonitoreoResultado(res || { mensaje: "Monitoreo finalizado." });
     } catch (e: any) {
       setMonitoreoResultado({ error: e.message || "Error al monitorear atención" });
     }
   };
 
-  // Si cancela, solo cierra el modal
   const handleCancelarConsentimiento = () => {
     setMostrarConsentimiento(false);
   };
 
-  // Renderiza el recurso solo durante el monitoreo
   const renderRecurso = () => {
     const recursoStyle = {
       width: "100%",
@@ -173,7 +161,7 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
       height: "500px",
       objectFit: "contain" as const,
       background: "black",
-      pointerEvents: "none" as const, // Evita interacción
+      pointerEvents: "none" as const,
       userSelect: "none" as const,
     };
 
@@ -185,7 +173,7 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
           controls={false}
           style={recursoStyle}
           tabIndex={-1}
-          onContextMenu={e => e.preventDefault()}
+          onContextMenu={(e) => e.preventDefault()}
         />
       );
     }
@@ -209,7 +197,6 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
         </div>
       );
     }
-    // Otros tipos pueden agregarse aquí
     return (
       <div
         className="rounded-lg bg-black flex items-center justify-center text-white text-xl"
@@ -223,20 +210,18 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
   return (
     <div className="flex justify-center mt-8">
       <div className="bg-white rounded-xl shadow p-8 w-full max-w-4xl">
-        {/* Breadcrumbs */}
         <div className="text-sm text-gray-500 mb-2">
           {recurso.nivel_nombre && <span>{recurso.nivel_nombre} / </span>}
           {recurso.leccion_nombre && <span>{recurso.leccion_nombre} / </span>}
           <span>{recurso.nombre}</span>
         </div>
-        {/* Título */}
+
         <h2 className="text-2xl font-bold text-[#003087] mb-4">{recurso.nombre}</h2>
-        {/* Descripción */}
+
         {recurso.descripcion && (
           <div className="text-gray-700 mb-4">{recurso.descripcion}</div>
         )}
 
-        {/* Botón Empezar */}
         {mostrarBotonEmpezar && !monitoreoEnCurso && !monitoreoResultado && (
           <div className="mt-6">
             <button
@@ -249,7 +234,6 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
           </div>
         )}
 
-        {/* Modal de consentimiento */}
         {mostrarConsentimiento && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
             <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
@@ -260,7 +244,7 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
                 ¿Acepta que se realice el monitoreo de atención durante el uso de este recurso?
                 <br />
                 <span className="text-xs text-gray-500">
-                  (Recuerde que el monitoreo y el recurso empezara inmediatamente ingrese al recurso)
+                  (El monitoreo inicia inmediatamente)
                 </span>
               </p>
               <div className="flex justify-end gap-2">
@@ -281,7 +265,6 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
           </div>
         )}
 
-        {/* Recurso y monitoreo en curso */}
         {monitoreoEnCurso && (
           <div className="mt-6">
             <div className="mb-2 text-center font-semibold text-[#003087]">
@@ -289,12 +272,11 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
             </div>
             <div>{renderRecurso()}</div>
             <div className="mt-4 text-center text-gray-500">
-              Por favor, permanece en la plataforma hasta que termine el monitoreo.
+              Permanece en la plataforma hasta que termine el monitoreo.
             </div>
           </div>
         )}
 
-        {/* Resultado monitoreo */}
         {monitoreoResultado && (
           <div className="mt-6 text-center">
             {monitoreoResultado.error ? (
@@ -307,8 +289,7 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
           </div>
         )}
 
-        {/* Nota combinada */}
-        {notaCombinada !== null && (
+        {recurso.es_evaluable && notaCombinada !== null && (
           <div className="mt-4 text-center">
             <div className="text-lg font-bold text-[#003087]">
               Nota combinada: {notaCombinada.nota_combinada}

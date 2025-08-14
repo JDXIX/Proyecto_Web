@@ -3,14 +3,15 @@ import axios from "axios";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Iniciar monitoreo de atención (POST a una sesión específica)
+// El backend calcula el score; enviamos opcionalmente la duración.
 export async function iniciarMonitoreo(
   sesionId: string,
-  atencion: number,
   token: string,
   duracion?: number
 ) {
-  const body: any = { atencion };
+  const body: any = {};
   if (duracion) body.duracion = duracion;
+
   const res = await axios.post(
     `${API_URL}/api/sesiones/${sesionId}/monitoreo-atencion/`,
     body,
@@ -40,6 +41,21 @@ export async function crearSesionesMonitoreo(
     }
   );
   return res.data;
+}
+
+// Crear (o devolver) sesión de monitoreo para el estudiante autenticado y un recurso
+export async function crearSesionParaMi(recursoId: string, token: string) {
+  const res = await axios.post(
+    `${API_URL}/api/sesiones/crear-para-mi/`,
+    { recurso: recursoId },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return res.data; // { id }
 }
 
 // Obtener nota combinada de un estudiante para un recurso

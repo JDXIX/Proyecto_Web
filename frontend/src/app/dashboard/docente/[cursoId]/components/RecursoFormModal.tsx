@@ -28,6 +28,7 @@ const TIPO = [
 ];
 
 const NO_MONITOREO = ["archivo"];
+const TIPOS_INFORMATIVOS = ["video", "pdf", "archivo"]; // Video/PDF/Archivo son informativos
 
 export default function RecursoFormModal({
   open,
@@ -52,7 +53,7 @@ export default function RecursoFormModal({
 
   // ISO: Estado para mostrar confirmación antes de crear recurso evaluable
   const [mostrarConfirmacionISO, setMostrarConfirmacionISO] = useState(false);
-  // ISO: Estado para mostrar el tercer modal de crear sesión monitoreo
+  // Estado para mostrar el modal de crear sesión monitoreo
   const [mostrarModalSesion, setMostrarModalSesion] = useState(false);
 
   useEffect(() => {
@@ -73,9 +74,13 @@ export default function RecursoFormModal({
   useEffect(() => {
     // Si el tipo no permite monitoreo, desmarca monitoreo
     setPermiteMonitoreo(!NO_MONITOREO.includes(tipo));
+    // Si el tipo es informativo, fuerza no-evaluable
+    if (TIPOS_INFORMATIVOS.includes(tipo)) {
+      setEsEvaluable(false);
+    }
   }, [tipo]);
 
-  // Si el usuario marca "Es evaluable", fuerza "Permite monitoreo" y lo deshabilita
+  // Si el usuario marca "Es evaluable", fuerza "Permite monitoreo"
   useEffect(() => {
     if (es_evaluable) setPermiteMonitoreo(true);
   }, [es_evaluable]);
@@ -86,16 +91,15 @@ export default function RecursoFormModal({
     }
   };
 
-  // ISO: Confirmación antes de crear recurso evaluable
+  // Validación de duración para cualquier recurso con monitoreo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setRecursoGuardado(null);
     setSesionesMensaje(null);
 
-    // Validación de duración para recursos evaluables y monitoreables
-    if (es_evaluable && permite_monitoreo && (!duracion || Number(duracion) <= 0)) {
-      setError("Debe especificar la duración (en segundos) para recursos evaluables y monitoreables.");
+    if (permite_monitoreo && (!duracion || Number(duracion) <= 0)) {
+      setError("Debe especificar la duración (en segundos) para recursos con monitoreo.");
       return;
     }
 
@@ -140,8 +144,8 @@ export default function RecursoFormModal({
       } else {
         recursoResp = await crearRecurso(formData, token!);
         setRecursoGuardado(recursoResp);
-        // Si es evaluable y monitoreable, muestra el tercer modal
-        if (es_evaluable && permite_monitoreo) {
+        // Si permite monitoreo, mostrar siempre el modal para crear sesiones
+        if (permite_monitoreo) {
           setMostrarModalSesion(true);
         } else {
           onSuccess();
@@ -204,7 +208,7 @@ export default function RecursoFormModal({
             <input
               type="text"
               value={nombre}
-              onChange={e => setNombre(e.target.value)}
+              onChange={(e) => setNombre(e.target.value)}
               required
               className="w-full border rounded px-3 py-2"
             />
@@ -213,10 +217,10 @@ export default function RecursoFormModal({
             <label className="block font-medium mb-1">Tipo</label>
             <select
               value={tipo}
-              onChange={e => setTipo(e.target.value)}
+              onChange={(e) => setTipo(e.target.value)}
               className="w-full border rounded px-3 py-2"
             >
-              {TIPO.map(opt => (
+              {TIPO.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
@@ -235,31 +239,41 @@ export default function RecursoFormModal({
               Máx. 100MB. Formatos: mp4, webm, pdf, docx, jpg, png
             </span>
           </div>
-          <div className="mb-4 flex items-center gap-2">
+
+          {/* Es evaluable: deshabilitado para Video/PDF/Archivo */}
+          <div className="mb-2 flex items-center gap-2">
             <input
               type="checkbox"
               checked={es_evaluable}
-              onChange={e => setEsEvaluable(e.target.checked)}
+              onChange={(e) => setEsEvaluable(e.target.checked)}
               id="evaluable"
+              disabled={TIPOS_INFORMATIVOS.includes(tipo)}
             />
             <label htmlFor="evaluable" className="font-medium">
               Es evaluable (nota académica)
             </label>
           </div>
+          {TIPOS_INFORMATIVOS.includes(tipo) && (
+            <div className="mb-4 text-xs text-gray-500">
+              Los tipos Video/PDF/Archivo son informativos y no pueden ser evaluables.
+            </div>
+          )}
+
           <div className="mb-4 flex items-center gap-2">
             <input
               type="checkbox"
               checked={permite_monitoreo}
               disabled={es_evaluable || NO_MONITOREO.includes(tipo)}
-              onChange={e => setPermiteMonitoreo(e.target.checked)}
+              onChange={(e) => setPermiteMonitoreo(e.target.checked)}
               id="permite_monitoreo"
             />
             <label htmlFor="permite_monitoreo" className="font-medium">
               Permite monitoreo
             </label>
           </div>
-          {/* Campo duración solo si es evaluable y monitoreable */}
-          {es_evaluable && permite_monitoreo && (
+
+          {/* Campo duración para cualquier recurso con monitoreo */}
+          {permite_monitoreo && (
             <div className="mb-4">
               <label className="block font-medium mb-1">
                 Duración del recurso (en segundos) <span className="text-red-600">*</span>
@@ -268,7 +282,9 @@ export default function RecursoFormModal({
                 type="number"
                 min={1}
                 value={duracion}
-                onChange={e => setDuracion(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) =>
+                  setDuracion(e.target.value === "" ? "" : Number(e.target.value))
+                }
                 required
                 className="w-full border rounded px-3 py-2"
                 placeholder="Ej: 120"
@@ -278,12 +294,14 @@ export default function RecursoFormModal({
               </span>
             </div>
           )}
+
           {!permite_monitoreo && (
             <div className="mb-4 text-yellow-700 bg-yellow-100 px-3 py-2 rounded text-sm">
               Advertencia: Este recurso no permite monitoreo de atención.
             </div>
           )}
           {error && <div className="text-red-600 mb-2">{error}</div>}
+
           <div className="flex justify-end gap-2">
             <button
               type="button"
@@ -337,15 +355,11 @@ export default function RecursoFormModal({
       {mostrarModalSesion && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white p-6 rounded shadow-lg max-w-md w-full flex flex-col items-center">
-            <h3 className="text-lg font-bold mb-2 text-[#003087]">
-              Crear sesión de monitoreo
-            </h3>
+            <h3 className="text-lg font-bold mb-2 text-[#003087]">Crear sesión de monitoreo</h3>
             <p className="mb-4 text-center">
-              Este recurso es <b>evaluable</b> y requiere monitoreo de atención.<br />
+              Este recurso requiere monitoreo de atención.<br />
               Para cumplir la norma ISO 21001:2018, debe crear la sesión de monitoreo para los estudiantes.<br />
-              <span className="text-xs text-gray-500">
-                Presione el botón para continuar.
-              </span>
+              <span className="text-xs text-gray-500">Presione el botón para continuar.</span>
             </p>
             <button
               type="button"
@@ -356,7 +370,11 @@ export default function RecursoFormModal({
               {creandoSesiones ? "Creando sesiones..." : "Crear sesión de monitoreo"}
             </button>
             {sesionesMensaje && (
-              <div className={`mt-4 text-sm ${sesionesMensaje.startsWith("Error") ? "text-red-600" : "text-green-700"}`}>
+              <div
+                className={`mt-4 text-sm ${
+                  sesionesMensaje.startsWith("Error") ? "text-red-600" : "text-green-700"
+                }`}
+              >
                 {sesionesMensaje}
               </div>
             )}
