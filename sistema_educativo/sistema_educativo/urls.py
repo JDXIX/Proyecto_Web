@@ -4,11 +4,10 @@ from rest_framework.routers import DefaultRouter
 from usuarios.views import UsuarioViewSet, PerfilUsuarioViewSet, CustomTokenObtainPairView
 from cursos.views import CursoViewSet, NivelViewSet, FaseViewSet, RecursoViewSet, InscripcionViewSet
 from atencion.views import SesionMonitoreoViewSet, AtencionVisualViewSet
-from recomendaciones.views import RecomendacionIAViewSet, HistorialEstudianteViewSet
+from recomendaciones.views import RecomendacionIAViewSet, HistorialEstudianteViewSet, generar_recomendacion_ia
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
-
 
 router = DefaultRouter()
 router.register(r'usuarios', UsuarioViewSet)
@@ -25,7 +24,8 @@ router.register(r'historial-estudiantes', HistorialEstudianteViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('atencion.urls')),  # <--- AGREGA ESTA LÍNEA
+    path('api/', include('atencion.urls')),
+    path('api/recomendaciones/generar/', generar_recomendacion_ia, name='generar_recomendacion_ia'),  # <-- NUEVO ENDPOINT
     path('api/', include(router.urls)),
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
