@@ -1,9 +1,9 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action, api_view, permission_classes
-from .models import SesionMonitoreo, AtencionVisual
-from .serializers import SesionMonitoreoSerializer, AtencionVisualSerializer
+from .models import SesionMonitoreo, AtencionVisual, NotaAcademica
+from .serializers import SesionMonitoreoSerializer, AtencionVisualSerializer, NotaAcademicaSerializer
 from django.utils import timezone
 
 # Importa el script actualizado
@@ -126,3 +126,45 @@ class AtencionVisualViewSet(viewsets.ModelViewSet):
     queryset = AtencionVisual.objects.all()
     serializer_class = AtencionVisualSerializer
     permission_classes = [IsAuthenticated]
+
+
+class NotaAcademicaViewSet(viewsets.ModelViewSet):
+    queryset = NotaAcademica.objects.all()
+    serializer_class = NotaAcademicaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        estudiante = self.request.query_params.get('estudiante')
+        recurso = self.request.query_params.get('recurso')
+        if estudiante:
+            qs = qs.filter(estudiante_id=estudiante)
+        if recurso:
+            qs = qs.filter(recurso_id=recurso)
+        return qs
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def obtener_nota_combinada(request):
+    estudiante_id = request.query_params.get('estudiante')
+    recurso_id = request.query_params.get('recurso')
+    if not estudiante_id or not recurso_id:
+        return Response({'error': 'Faltan parámetros'}, status=400)
+    try:
+        from .models import AtencionVisual, NotaAcademica
+        atencion = AtencionVisual.objects.filter(
+            estudiante_id=estudiante_id, recurso_id=recurso_id
+        ).order_by('-id').first()
+        nota = NotaAcademica.objects.filter(
+            estudiante_id=estudiante_id, recurso_id=recurso_id
+        ).order_by('-id').first()
+        score_atencion = atencion.score_atencion if atencion else 0
+        nota_academica = nota.nota if nota else 0
+        nota_combinada = round(0.4 * score_atencion + 0.6 * nota_academica, 2)
+        return Response({
+            'score_atencion': score_atencion,
+            'nota_academica': nota_academica,
+            'nota_combinada': nota_combinada
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

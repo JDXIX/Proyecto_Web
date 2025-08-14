@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SesionMonitoreo, AtencionVisual
+from .models import SesionMonitoreo, AtencionVisual, NotaAcademica
 
 class SesionMonitoreoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,4 +9,9 @@ class SesionMonitoreoSerializer(serializers.ModelSerializer):
 class AtencionVisualSerializer(serializers.ModelSerializer):
     class Meta:
         model = AtencionVisual
+        fields = '__all__'
+
+class NotaAcademicaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotaAcademica
         fields = '__all__'

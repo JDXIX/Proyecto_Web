@@ -82,3 +82,12 @@ class AtencionVisual(models.Model):
 
     class Meta:
         verbose_name = "Atención Visual"
+
+class NotaAcademica(models.Model):
+    estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    recurso = models.ForeignKey(Recurso, on_delete=models.CASCADE)
+    nota = models.FloatField()  # 0-100
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('estudiante', 'recurso')
