@@ -23,6 +23,7 @@ export async function iniciarMonitoreo(
   );
   return res.data;
 }
+
 // Crear sesiones de monitoreo para todos los estudiantes de un recurso/fase
 export async function crearSesionesMonitoreo(
   { recursoId, faseId }: { recursoId: string; faseId: string },
@@ -34,6 +35,23 @@ export async function crearSesionesMonitoreo(
     {
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return res.data;
+}
+
+// Obtener nota combinada de un estudiante para un recurso
+export async function obtenerNotaCombinada(
+  estudianteId: string,
+  recursoId: string,
+  token: string
+) {
+  const res = await axios.get(
+    `${API_URL}/api/nota-combinada/?estudiante=${estudianteId}&recurso=${recursoId}`,
+    {
+      headers: {
         Authorization: `Bearer ${token}`,
       },
     }

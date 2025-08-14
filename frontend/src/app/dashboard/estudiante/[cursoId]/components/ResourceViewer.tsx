@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { getRecursoDetalle } from "@/services/cursos";
-import { iniciarMonitoreo } from "@/services/monitoreo";
+import { iniciarMonitoreo, obtenerNotaCombinada } from "@/services/monitoreo";
 
 async function obtenerSesionMonitoreo(recursoId: string, token: string) {
   const res = await fetch(
@@ -47,7 +47,17 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
   const [mostrarConsentimiento, setMostrarConsentimiento] = useState(false);
   const [tiempoRestante, setTiempoRestante] = useState<number | null>(null);
 
+  // Estado para la nota combinada
+  const [notaCombinada, setNotaCombinada] = useState<{
+    score_atencion: number;
+    nota_academica: number;
+    nota_combinada: number;
+  } | null>(null);
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Obtén el ID del estudiante desde localStorage (ajusta según tu auth)
+  const estudianteId = typeof window !== "undefined" ? localStorage.getItem("user_id") : null;
 
   useEffect(() => {
     if (!recursoId) {
@@ -68,6 +78,7 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
     obtenerSesionMonitoreo(recursoId, token).then((id) => {
       setSesionId(id);
     });
+    setNotaCombinada(null); // Limpia la nota combinada al cambiar de recurso
   }, [recursoId]);
 
   useEffect(() => {
@@ -76,6 +87,17 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
+
+  // Consulta la nota combinada siempre que haya recurso y estudiante
+  useEffect(() => {
+    if (recursoId && estudianteId) {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      obtenerNotaCombinada(estudianteId, recursoId, token)
+        .then((data) => setNotaCombinada(data))
+        .catch(() => setNotaCombinada(null));
+    }
+  }, [recursoId, estudianteId, monitoreoResultado]);
 
   if (!recursoId) {
     return (
@@ -272,9 +294,18 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
               <span className="text-red-600">{monitoreoResultado.error}</span>
             ) : (
               <span className="text-green-700 font-semibold">
-                Monitoreo finalizado. ¡Gracias por tu participación!
+                Monitoreo finalizado. ¡Gracias por tu participación!"
               </span>
             )}
+          </div>
+        )}
+
+        {/* Nota combinada */}
+        {notaCombinada !== null && (
+          <div className="mt-4 text-center">
+            <div className="text-lg font-bold text-[#003087]">
+              Nota combinada: {notaCombinada.nota_combinada}
+            </div>
           </div>
         )}
       </div>
