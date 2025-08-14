@@ -20,6 +20,7 @@ class RecursoSerializer(serializers.ModelSerializer):
     archivo_url = serializers.SerializerMethodField()
     nivel_nombre = serializers.SerializerMethodField()
     leccion_nombre = serializers.SerializerMethodField()
+    duracion = serializers.IntegerField(required=False, allow_null=True)  # <-- Asegura que el campo esté presente
 
     def get_archivo_url(self, obj):
         request = self.context.get("request")
@@ -44,8 +45,8 @@ class RecursoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recurso
         fields = '__all__'
-        extra_fields = ['archivo_url', 'nivel_nombre', 'leccion_nombre']
-        
+        extra_fields = ['archivo_url', 'nivel_nombre', 'leccion_nombre', 'duracion']
+
 class InscripcionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Inscripcion

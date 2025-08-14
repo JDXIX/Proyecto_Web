@@ -6,11 +6,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 export async function iniciarMonitoreo(
   sesionId: string,
   atencion: number,
-  token: string
+  token: string,
+  duracion?: number
 ) {
+  const body: any = { atencion };
+  if (duracion) body.duracion = duracion;
   const res = await axios.post(
     `${API_URL}/api/sesiones/${sesionId}/monitoreo-atencion/`,
-    { atencion },
+    body,
     {
       headers: {
         "Content-Type": "application/json",
@@ -20,7 +23,6 @@ export async function iniciarMonitoreo(
   );
   return res.data;
 }
-
 // Crear sesiones de monitoreo para todos los estudiantes de un recurso/fase
 export async function crearSesionesMonitoreo(
   { recursoId, faseId }: { recursoId: string; faseId: string },

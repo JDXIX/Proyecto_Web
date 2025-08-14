@@ -33,6 +33,7 @@ class SesionMonitoreoViewSet(viewsets.ModelViewSet):
     def monitoreo_atencion(self, request, pk=None):
         sesion_id = pk or request.data.get('sesion_id')
         atencion = request.data.get('atencion')
+        duracion = request.data.get('duracion')  # <-- Recibe duración del frontend
 
         if not sesion_id or atencion is None:
             return Response({"error": "sesion_id y atencion son requeridos"}, status=status.HTTP_400_BAD_REQUEST)
@@ -43,8 +44,19 @@ class SesionMonitoreoViewSet(viewsets.ModelViewSet):
             if score_atencion < 0 or score_atencion > 100:
                 return Response({"error": "El score de atención debe estar entre 0 y 100"}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Ejecuta el monitoreo visual (ajusta segundos según necesidad)
-            resultados = monitorear_atencion_durante_tiempo(segundos=30, mostrar_ventana=False)
+            # Determina la duración a usar
+            if duracion is not None:
+                try:
+                    segundos = int(duracion)
+                except Exception:
+                    segundos = 30
+            elif sesion.recurso and sesion.recurso.duracion:
+                segundos = sesion.recurso.duracion
+            else:
+                segundos = 30
+
+            # Ejecuta el monitoreo visual con la duración correcta
+            resultados = monitorear_atencion_durante_tiempo(segundos=segundos, mostrar_ventana=False)
 
             patrones = {
                 "promedio_desviacion": resultados.get("promedio_desviacion", 0.0),

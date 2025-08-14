@@ -34,6 +34,7 @@ interface Recurso {
   leccion_nombre?: string;
   permite_monitoreo?: boolean;
   es_evaluable?: boolean;
+  duracion?: number; // <-- AGREGA ESTE CAMPO
 }
 
 export default function ResourceViewer({ cursoId }: { cursoId: string }) {
@@ -117,9 +118,9 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
     setMonitoreoLoading(true);
     try {
       const token = localStorage.getItem("token");
-      console.log("POST monitoreo con sesionId:", sesionId, "token:", token); // <-- Depuración
       if (!sesionId || !token) throw new Error("Sesión o token no disponible");
-      const res = await iniciarMonitoreo(sesionId, 85, token); // 85 es un ejemplo de score
+      // ENVÍA LA DURACIÓN DEL RECURSO
+      const res = await iniciarMonitoreo(sesionId, 85, token, recurso?.duracion);
       setMonitoreoResultado(res.patrones);
     } catch (e: any) {
       setMonitoreoResultado({ error: e.message || "Error al monitorear atención" });

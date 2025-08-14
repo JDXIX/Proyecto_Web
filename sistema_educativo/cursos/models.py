@@ -135,6 +135,8 @@ class Fase(models.Model):
         verbose_name_plural = "Fases"
         unique_together = ('nivel', 'nombre')  # Evita nombres duplicados por nivel
 
+# ...existing code...
+
 class Recurso(models.Model):
     """
     Almacena recursos (videos, quizzes, PDFs, etc.) asociados a una fase.
@@ -152,6 +154,12 @@ class Recurso(models.Model):
     )
     permite_monitoreo = models.BooleanField(default=True)
     es_evaluable = models.BooleanField(default=False)
+    # NUEVO CAMPO: duración en segundos (obligatorio para recursos evaluables)
+    duracion = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Duración del recurso en segundos (obligatorio para recursos evaluables y monitoreables)"
+    )
     nota_maxima = models.FloatField(
         default=100.0,
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
@@ -177,10 +185,14 @@ class Recurso(models.Model):
         return f"{self.nombre} ({self.get_tipo_display()})"
 
     def clean(self):
-        """Valida que el archivo no sea demasiado grande (50MB)."""
+        """Valida que el archivo no sea demasiado grande (50MB) y que la duración sea obligatoria si corresponde."""
         if self.archivo and self.archivo.size > 50 * 1024 * 1024:  # 50MB en bytes
             raise ValidationError("El archivo no debe exceder 50MB.")
+        # Validar duración obligatoria para recursos evaluables y monitoreables
+        if self.es_evaluable and self.permite_monitoreo and not self.duracion:
+            raise ValidationError("Debe especificar la duración para recursos evaluables y monitoreables.")
 
     class Meta:
         verbose_name = "Recurso"
         verbose_name_plural = "Recursos"
+
