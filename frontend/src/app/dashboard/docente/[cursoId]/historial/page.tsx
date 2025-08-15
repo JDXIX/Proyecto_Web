@@ -9,7 +9,8 @@ interface Historial {
   estudiante: string;
   curso: string;
   nivel: string;
-  fase: string;
+  leccion?: string; // Usar leccion si está disponible
+  fase?: string;    // Compatibilidad con backend
   actividad: string;
   score_atencion: number;
   nota_academica: number;
@@ -68,7 +69,7 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
                 <tr className="bg-[#E6F0FA] text-[#003087]">
                   <th className="py-2 px-4 text-left">Estudiante</th>
                   <th className="py-2 px-4 text-left">Nivel</th>
-                  <th className="py-2 px-4 text-left">Fase</th>
+                  <th className="py-2 px-4 text-left">Lección</th>
                   <th className="py-2 px-4 text-left">Actividad</th>
                   <th className="py-2 px-4 text-center">Atención</th>
                   <th className="py-2 px-4 text-center">Nota</th>
@@ -82,7 +83,7 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
                   <tr key={h.id} className="border-b hover:bg-[#F4F8FB]">
                     <td className="py-2 px-4">{h.estudiante}</td>
                     <td className="py-2 px-4">{h.nivel}</td>
-                    <td className="py-2 px-4">{h.fase}</td>
+                    <td className="py-2 px-4">{h.leccion || h.fase}</td>
                     <td className="py-2 px-4">{h.actividad}</td>
                     <td className="py-2 px-4 text-center">{h.score_atencion ?? "-"}</td>
                     <td className="py-2 px-4 text-center">{h.nota_academica ?? "-"}</td>
@@ -121,3 +122,4 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
       </div>
     </div>
   );
+}

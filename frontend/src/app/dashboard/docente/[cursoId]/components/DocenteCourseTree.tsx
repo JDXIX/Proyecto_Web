@@ -45,7 +45,7 @@ export default function DocenteCourseTree({ cursoId }: { cursoId: string }) {
   const [nivelModalOpen, setNivelModalOpen] = useState(false);
   const [nivelToEdit, setNivelToEdit] = useState<Nivel | undefined>(undefined);
 
-  // Modal state for Leccion
+  // Modal state for Lección
   const [leccionModalOpen, setLeccionModalOpen] = useState(false);
   const [leccionToEdit, setLeccionToEdit] = useState<Leccion | undefined>(undefined);
   const [leccionNivelId, setLeccionNivelId] = useState<string>("");
@@ -213,7 +213,7 @@ export default function DocenteCourseTree({ cursoId }: { cursoId: string }) {
                   className="ml-1 text-green-600 hover:underline flex items-center gap-1"
                   onClick={() => handleAddLeccion(nivel.id)}
                 >
-                  <FiPlus /> Lección
+                  <FiPlus /> Agregar Lección
                 </button>
               </div>
               {/* Lecciones */}
@@ -229,7 +229,7 @@ export default function DocenteCourseTree({ cursoId }: { cursoId: string }) {
                         >
                           {expandedLecciones.includes(leccion.id) ? <FiChevronDown /> : <FiChevronRight />}
                         </button>
-                        <span>{leccion.nombre}</span>
+                        <span className="font-medium">{leccion.nombre}</span>
                         <button
                           className="ml-2 text-[#00B7EB] hover:underline flex items-center gap-1"
                           onClick={() => handleEditLeccion(leccion, nivel.id)}
@@ -246,7 +246,7 @@ export default function DocenteCourseTree({ cursoId }: { cursoId: string }) {
                           className="ml-1 text-green-600 hover:underline flex items-center gap-1"
                           onClick={() => handleAddRecurso(leccion.id)}
                         >
-                          <FiPlus /> Recurso
+                          <FiPlus /> Agregar Recurso
                         </button>
                       </div>
                       {/* Recursos */}

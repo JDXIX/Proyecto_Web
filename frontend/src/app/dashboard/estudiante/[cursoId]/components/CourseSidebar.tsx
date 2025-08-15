@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { getNiveles, getLecciones, getRecursos } from "@/services/cursos";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { FaRegLightbulb, FaRegFileVideo, FaRegFilePdf, FaRegFileAlt, FaRegCheckCircle } from "react-icons/fa";
 
 interface Nivel {
   id: string;
@@ -20,6 +22,23 @@ interface Recurso {
   id: string;
   nombre: string;
   tipo: string;
+  es_evaluable?: boolean;
+  permite_monitoreo?: boolean;
+}
+
+function getRecursoIcon(tipo: string) {
+  switch (tipo) {
+    case "video":
+      return <FaRegFileVideo className="inline mr-1 text-blue-400" />;
+    case "pdf":
+      return <FaRegFilePdf className="inline mr-1 text-red-400" />;
+    case "quiz":
+      return <FaRegLightbulb className="inline mr-1 text-yellow-400" />;
+    case "simulador":
+      return <FaRegLightbulb className="inline mr-1 text-green-400" />;
+    default:
+      return <FaRegFileAlt className="inline mr-1 text-gray-400" />;
+  }
 }
 
 export default function CourseSidebar({ cursoId }: { cursoId: string }) {
@@ -83,9 +102,9 @@ export default function CourseSidebar({ cursoId }: { cursoId: string }) {
   }
 
   return (
-    <aside className="w-72 bg-white border-r p-4 h-full">
+    <aside className="w-72 bg-white border-r p-4 h-full flex flex-col">
       <h2 className="text-xl font-bold mb-4 text-[#003087]">Estructura del Curso</h2>
-      <div>
+      <div className="flex-1 overflow-y-auto">
         {niveles.length === 0 && (
           <div className="text-gray-500">No hay niveles en este curso.</div>
         )}
@@ -133,9 +152,18 @@ export default function CourseSidebar({ cursoId }: { cursoId: string }) {
                                 }}
                                 onClick={() => handleRecursoClick(recurso.id)}
                               >
+                                {getRecursoIcon(recurso.tipo)}
                                 {recurso.nombre}
                               </button>
-                              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">{recurso.tipo}</span>
+                              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded capitalize">
+                                {recurso.tipo}
+                              </span>
+                              {/* Si es evaluable, muestra un icono */}
+                              {recurso.es_evaluable && (
+                                <span title="Recurso evaluable">
+                                  <FaRegCheckCircle className="text-green-500" />
+                                </span>
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -146,6 +174,14 @@ export default function CourseSidebar({ cursoId }: { cursoId: string }) {
               )}
             </div>
           ))}
+      </div>
+      <div className="mt-6">
+        <Link
+          href={`/dashboard/estudiante/${cursoId}/historial`}
+          className="block w-full text-center px-4 py-2 bg-[#00B7EB] text-white rounded hover:bg-[#0099c6] transition font-semibold"
+        >
+          Mi historial de recomendaciones IA
+        </Link>
       </div>
     </aside>
   );

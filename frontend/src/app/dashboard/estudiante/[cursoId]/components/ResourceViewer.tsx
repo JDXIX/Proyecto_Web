@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { getRecursoDetalle } from "@/services/cursos";
 import { iniciarMonitoreo, obtenerNotaCombinada, crearSesionParaMi } from "@/services/monitoreo";
-import RecomendacionIA from "./RecomendacionIA"; // <-- Añadido
+import RecomendacionIA from "./RecomendacionIA";
 
 async function obtenerSesionMonitoreo(recursoId: string, token: string) {
   const res = await fetch(`http://localhost:8000/api/sesiones/?recurso=${recursoId}`, {
@@ -213,6 +213,7 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
   return (
     <div className="flex justify-center mt-8">
       <div className="bg-white rounded-xl shadow p-8 w-full max-w-4xl">
+        {/* Breadcrumbs: Nivel / Lección / Recurso */}
         <div className="text-sm text-gray-500 mb-2">
           {recurso.nivel_nombre && <span>{recurso.nivel_nombre} / </span>}
           {recurso.leccion_nombre && <span>{recurso.leccion_nombre} / </span>}

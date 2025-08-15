@@ -7,7 +7,8 @@ import Link from "next/link";
 interface Recomendacion {
   id: string;
   estudiante: string;
-  fase: string;
+  leccion?: string; // Usar leccion si está disponible
+  fase?: string;    // Compatibilidad con backend
   mensaje: string;
   acciones: any;
   estado: string;
@@ -60,7 +61,7 @@ export default function RecomendacionesDocentePage({ params }: { params: { curso
               <thead>
                 <tr className="bg-[#E6F0FA] text-[#003087]">
                   <th className="py-2 px-4 text-left">Estudiante</th>
-                  <th className="py-2 px-4 text-left">Fase</th>
+                  <th className="py-2 px-4 text-left">Lección</th>
                   <th className="py-2 px-4 text-left">Mensaje</th>
                   <th className="py-2 px-4 text-left">Acciones</th>
                   <th className="py-2 px-4 text-center">Estado</th>
@@ -71,7 +72,7 @@ export default function RecomendacionesDocentePage({ params }: { params: { curso
                 {recomendaciones.map((rec) => (
                   <tr key={rec.id} className="border-b hover:bg-[#F4F8FB]">
                     <td className="py-2 px-4">{rec.estudiante}</td>
-                    <td className="py-2 px-4">{rec.fase}</td>
+                    <td className="py-2 px-4">{rec.leccion || rec.fase}</td>
                     <td className="py-2 px-4">{rec.mensaje}</td>
                     <td className="py-2 px-4">
                       {Array.isArray(rec.acciones)
