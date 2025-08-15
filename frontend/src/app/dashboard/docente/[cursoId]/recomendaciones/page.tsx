@@ -4,11 +4,37 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 
+// Helpers para mostrar nombres legibles
+async function getUsuarioNombre(id: string, token: string) {
+  if (!id) return "";
+  try {
+    const res = await axios.get(`http://localhost:8000/api/usuarios/${id}/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const u = res.data || {};
+    return `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.username || u.email || id;
+  } catch {
+    return id;
+  }
+}
+
+async function getLeccionNombre(id: string, token: string) {
+  if (!id) return "";
+  try {
+    const res = await axios.get(`http://localhost:8000/api/fases/${id}/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data?.nombre || id;
+  } catch {
+    return id;
+  }
+}
+
 interface Recomendacion {
   id: string;
   estudiante: string;
-  leccion?: string; // Usar leccion si está disponible
-  fase?: string;    // Compatibilidad con backend
+  leccion?: string;
+  fase?: string;
   mensaje: string;
   acciones: any;
   estado: string;
@@ -20,6 +46,8 @@ export default function RecomendacionesDocentePage({ params }: { params: { curso
   const [recomendaciones, setRecomendaciones] = useState<Recomendacion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [leccionNames, setLeccionNames] = useState<Record<string, string>>({});
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const cursoId = params.cursoId;
@@ -31,7 +59,30 @@ export default function RecomendacionesDocentePage({ params }: { params: { curso
       .get(`http://localhost:8000/api/recomendaciones/?curso=${cursoId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setRecomendaciones(res.data))
+      .then(async (res) => {
+        const data = res.data || [];
+        setRecomendaciones(data);
+
+        // IDs únicos de estudiantes y lecciones
+        const estIds = Array.from(new Set(data.map((r: any) => r.estudiante).filter(Boolean)));
+        const lecIds = Array.from(new Set(data.map((r: any) => r.leccion || r.fase).filter(Boolean)));
+
+        // Resuelve nombres en paralelo
+        const [userMap, leccionMap] = await Promise.all([
+          (async () => {
+            const map: Record<string, string> = {};
+            await Promise.all(estIds.map(async (id) => (map[id] = await getUsuarioNombre(id, token))));
+            return map;
+          })(),
+          (async () => {
+            const map: Record<string, string> = {};
+            await Promise.all(lecIds.map(async (id) => (map[id] = await getLeccionNombre(id, token))));
+            return map;
+          })(),
+        ]);
+        setUserNames(userMap);
+        setLeccionNames(leccionMap);
+      })
       .catch(() => setError("No se pudieron cargar las recomendaciones."))
       .finally(() => setLoading(false));
   }, [token, cursoId]);
@@ -71,8 +122,8 @@ export default function RecomendacionesDocentePage({ params }: { params: { curso
               <tbody>
                 {recomendaciones.map((rec) => (
                   <tr key={rec.id} className="border-b hover:bg-[#F4F8FB]">
-                    <td className="py-2 px-4">{rec.estudiante}</td>
-                    <td className="py-2 px-4">{rec.leccion || rec.fase}</td>
+                    <td className="py-2 px-4">{userNames[rec.estudiante] || rec.estudiante}</td>
+                    <td className="py-2 px-4">{leccionNames[rec.leccion || rec.fase] || rec.leccion || rec.fase}</td>
                     <td className="py-2 px-4">{rec.mensaje}</td>
                     <td className="py-2 px-4">
                       {Array.isArray(rec.acciones)

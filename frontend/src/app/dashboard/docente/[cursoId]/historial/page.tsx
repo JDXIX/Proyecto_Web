@@ -4,13 +4,39 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 
+// Helpers para mostrar nombres legibles
+async function getUsuarioNombre(id: string, token: string) {
+  if (!id) return "";
+  try {
+    const res = await axios.get(`http://localhost:8000/api/usuarios/${id}/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const u = res.data || {};
+    return `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.username || u.email || id;
+  } catch {
+    return id;
+  }
+}
+
+async function getLeccionNombre(id: string, token: string) {
+  if (!id) return "";
+  try {
+    const res = await axios.get(`http://localhost:8000/api/fases/${id}/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data?.nombre || id;
+  } catch {
+    return id;
+  }
+}
+
 interface Historial {
   id: string;
   estudiante: string;
   curso: string;
   nivel: string;
-  leccion?: string; // Usar leccion si está disponible
-  fase?: string;    // Compatibilidad con backend
+  leccion?: string;
+  fase?: string;
   actividad: string;
   score_atencion: number;
   nota_academica: number;
@@ -27,6 +53,8 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
   const [historial, setHistorial] = useState<Historial[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [leccionNames, setLeccionNames] = useState<Record<string, string>>({});
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const { cursoId } = params;
@@ -38,7 +66,30 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
       .get(`http://localhost:8000/api/historial-estudiantes/?curso=${cursoId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setHistorial(res.data))
+      .then(async (res) => {
+        const data = res.data || [];
+        setHistorial(data);
+
+        // IDs únicos de estudiantes y lecciones
+        const estIds = Array.from(new Set(data.map((h: any) => h.estudiante).filter(Boolean)));
+        const lecIds = Array.from(new Set(data.map((h: any) => h.leccion || h.fase).filter(Boolean)));
+
+        // Resuelve nombres en paralelo
+        const [userMap, leccionMap] = await Promise.all([
+          (async () => {
+            const map: Record<string, string> = {};
+            await Promise.all(estIds.map(async (id) => (map[id] = await getUsuarioNombre(id, token))));
+            return map;
+          })(),
+          (async () => {
+            const map: Record<string, string> = {};
+            await Promise.all(lecIds.map(async (id) => (map[id] = await getLeccionNombre(id, token))));
+            return map;
+          })(),
+        ]);
+        setUserNames(userMap);
+        setLeccionNames(leccionMap);
+      })
       .catch(() => setError("No se pudo cargar el historial del curso."))
       .finally(() => setLoading(false));
   }, [token, cursoId]);
@@ -81,9 +132,9 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
               <tbody>
                 {historial.map((h) => (
                   <tr key={h.id} className="border-b hover:bg-[#F4F8FB]">
-                    <td className="py-2 px-4">{h.estudiante}</td>
+                    <td className="py-2 px-4">{userNames[h.estudiante] || h.estudiante}</td>
                     <td className="py-2 px-4">{h.nivel}</td>
-                    <td className="py-2 px-4">{h.leccion || h.fase}</td>
+                    <td className="py-2 px-4">{leccionNames[h.leccion || h.fase] || h.leccion || h.fase}</td>
                     <td className="py-2 px-4">{h.actividad}</td>
                     <td className="py-2 px-4 text-center">{h.score_atencion ?? "-"}</td>
                     <td className="py-2 px-4 text-center">{h.nota_academica ?? "-"}</td>

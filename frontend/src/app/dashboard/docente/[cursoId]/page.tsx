@@ -40,17 +40,23 @@ export default function DocenteCursoPage() {
         <div className="text-center text-lg text-[#003087]">Cargando información del curso...</div>
       ) : (
         <>
-          {/* Resumen del curso */}
+          {/* Inicio del curso */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[#003087] mb-2">{curso?.nombre || "Curso"}</h1>
             <p className="text-lg text-gray-700 mb-2">{curso?.descripcion}</p>
-            <div className="flex gap-4 mt-4">
+            <div className="flex flex-wrap gap-4 mt-4">
+              <Link
+                href={`/dashboard/docente/${cursoId}`}
+                className="flex items-center gap-2 px-4 py-2 bg-[#003087] text-white rounded hover:bg-[#001f5c] transition"
+              >
+                Inicio
+              </Link>
               <Link
                 href={`/dashboard/docente/${cursoId}/reportes`}
                 className="flex items-center gap-2 px-4 py-2 bg-[#00B7EB] text-white rounded hover:bg-[#0099c6] transition"
               >
                 <FiBarChart2 className="text-xl" />
-                Ver Reportes
+                Reportes
               </Link>
               <Link
                 href={`/dashboard/docente/${cursoId}/recomendaciones`}
@@ -58,6 +64,12 @@ export default function DocenteCursoPage() {
               >
                 <FiMessageSquare className="text-xl" />
                 Recomendaciones IA
+              </Link>
+              <Link
+                href={`/dashboard/docente/${cursoId}/historial`}
+                className="flex items-center gap-2 px-4 py-2 bg-[#E6F0FA] text-[#003087] rounded hover:bg-[#cbe7fa] transition font-semibold"
+              >
+                Historial
               </Link>
             </div>
           </div>
@@ -120,7 +132,7 @@ export default function DocenteCursoPage() {
                         </td>
                         <td className="py-2 px-4 text-center">
                           <Link
-                            href={`/dashboard/docente/${cursoId}/reportes?estudiante=${est.id}`}
+                            href={`/dashboard/docente/${cursoId}/estudiante/${est.id}`}
                             className="text-[#00B7EB] hover:underline"
                           >
                             Ver detalle

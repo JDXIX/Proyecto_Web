@@ -4,12 +4,25 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 
+// Helpers para mostrar nombres legibles
+async function getLeccionNombre(id: string, token: string) {
+  if (!id) return "";
+  try {
+    const res = await axios.get(`http://localhost:8000/api/fases/${id}/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data?.nombre || id;
+  } catch {
+    return id;
+  }
+}
+
 interface Historial {
   id: string;
   curso: string;
   nivel: string;
-  leccion?: string; // Usar leccion si está disponible
-  fase?: string;    // Compatibilidad con backend
+  leccion?: string;
+  fase?: string;
   actividad: string;
   score_atencion: number;
   nota_academica: number;
@@ -30,6 +43,7 @@ export default function DetalleEstudianteDocentePage({
   const [historial, setHistorial] = useState<Historial[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [leccionNames, setLeccionNames] = useState<Record<string, string>>({});
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -45,7 +59,20 @@ export default function DetalleEstudianteDocentePage({
           headers: { Authorization: `Bearer ${token}` },
         }
       )
-      .then((res) => setHistorial(res.data))
+      .then(async (res) => {
+        const data = res.data || [];
+        setHistorial(data);
+
+        // IDs únicos de lecciones/fases
+        const lecIds = Array.from(new Set(data.map((h: any) => h.leccion || h.fase).filter(Boolean)));
+        const leccionMap: Record<string, string> = {};
+        await Promise.all(
+          lecIds.map(async (id) => {
+            leccionMap[id] = await getLeccionNombre(id, token);
+          })
+        );
+        setLeccionNames(leccionMap);
+      })
       .catch(() =>
         setError("No se pudo cargar el historial del estudiante.")
       )
@@ -90,7 +117,7 @@ export default function DetalleEstudianteDocentePage({
                 {historial.map((h) => (
                   <tr key={h.id} className="border-b hover:bg-[#F4F8FB]">
                     <td className="py-2 px-4">{h.nivel}</td>
-                    <td className="py-2 px-4">{h.leccion || h.fase}</td>
+                    <td className="py-2 px-4">{leccionNames[h.leccion || h.fase] || h.leccion || h.fase}</td>
                     <td className="py-2 px-4">{h.actividad}</td>
                     <td className="py-2 px-4 text-center">{h.score_atencion ?? "-"}</td>
                     <td className="py-2 px-4 text-center">{h.nota_academica ?? "-"}</td>
