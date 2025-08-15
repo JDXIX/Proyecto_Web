@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { getRecursoDetalle } from "@/services/cursos";
 import { iniciarMonitoreo, obtenerNotaCombinada, crearSesionParaMi } from "@/services/monitoreo";
+import RecomendacionIA from "./RecomendacionIA"; // <-- Añadido
 
 async function obtenerSesionMonitoreo(recursoId: string, token: string) {
   const res = await fetch(`http://localhost:8000/api/sesiones/?recurso=${recursoId}`, {
@@ -33,6 +34,8 @@ interface Recurso {
   permite_monitoreo?: boolean;
   es_evaluable?: boolean;
   duracion?: number;
+  leccion_id?: string; // por compatibilidad
+  fase_id?: string;    // por compatibilidad
 }
 
 export default function ResourceViewer({ cursoId }: { cursoId: string }) {
@@ -295,6 +298,16 @@ export default function ResourceViewer({ cursoId }: { cursoId: string }) {
               Nota combinada: {notaCombinada.nota_combinada}
             </div>
           </div>
+        )}
+
+        {/* IA: Mostrar recomendación solo si el recurso es evaluable y hay datos */}
+        {recurso.es_evaluable && estudianteId && recursoId && (
+          <RecomendacionIA
+            estudianteId={estudianteId}
+            faseId={recurso.leccion_id || recurso.fase_id || ""}
+            atencion={notaCombinada?.score_atencion || 0}
+            nota={notaCombinada?.nota_academica || 0}
+          />
         )}
       </div>
     </div>

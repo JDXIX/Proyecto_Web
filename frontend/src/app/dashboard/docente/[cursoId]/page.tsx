@@ -6,6 +6,7 @@ import { getCursoDetalleDocente, getEstudiantesCurso } from "@/services/cursos";
 import Link from "next/link";
 import { FiBarChart2, FiMessageSquare } from "react-icons/fi";
 import DocenteCourseTree from "./components/DocenteCourseTree";
+import TablaRecomendacionesIA from "./components/TablaRecomendacionesIA";
 
 interface Estudiante {
   id: string;
@@ -34,7 +35,7 @@ export default function DocenteCursoPage() {
   }, [cursoId]);
 
   return (
-    <div className="w-full h-full p-4 md:p-8">
+    <div className="w-full h-full p-4 md:p-8 bg-[#F5F8FA] min-h-screen">
       {loading ? (
         <div className="text-center text-lg text-[#003087]">Cargando información del curso...</div>
       ) : (
@@ -63,6 +64,11 @@ export default function DocenteCursoPage() {
 
           {/* Árbol de gestión docente */}
           <DocenteCourseTree cursoId={cursoId || ""} />
+
+          {/* Tabla de recomendaciones IA - ISO 21001:2018 */}
+          <div className="my-8">
+            <TablaRecomendacionesIA cursoId={cursoId || ""} />
+          </div>
 
           {/* Lista de estudiantes */}
           <div className="bg-white rounded-lg shadow p-6">
