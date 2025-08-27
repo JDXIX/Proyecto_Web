@@ -111,6 +111,11 @@ class Fase(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     nivel = models.ForeignKey(Nivel, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
+    orden = models.IntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        help_text="Orden de la fase dentro del nivel (mínimo 1)"
+    )
     creado_por = models.ForeignKey(
         Usuario,
         on_delete=models.SET_NULL,
@@ -133,7 +138,7 @@ class Fase(models.Model):
     class Meta:
         verbose_name = "Fase"
         verbose_name_plural = "Fases"
-        unique_together = ('nivel', 'nombre')  # Evita nombres duplicados por nivel
+        unique_together = [('nivel', 'nombre'), ('nivel', 'orden')]  # Evita nombres y órdenes duplicados por nivel
 
 # ...existing code...
 

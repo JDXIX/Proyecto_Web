@@ -63,8 +63,8 @@ export default function TablaRecomendacionesIA({ cursoId }: { cursoId: string })
         setRecomendaciones(data);
 
         // IDs únicos de estudiantes y lecciones
-        const estIds = Array.from(new Set(data.map((r: any) => r.estudiante).filter(Boolean)));
-        const lecIds = Array.from(new Set(data.map((r: any) => r.leccion || r.fase).filter(Boolean)));
+        const estIds = Array.from(new Set(data.map((r: any) => r.estudiante).filter(Boolean))) as string[];
+        const faseIds = Array.from(new Set(data.map((r: any) => r.fase).filter(Boolean))) as string[];
 
         // Resuelve nombres en paralelo
         const [userMap, leccionMap] = await Promise.all([
@@ -75,7 +75,7 @@ export default function TablaRecomendacionesIA({ cursoId }: { cursoId: string })
           })(),
           (async () => {
             const map: Record<string, string> = {};
-            await Promise.all(lecIds.map(async (id) => (map[id] = await getLeccionNombre(id, token))));
+            await Promise.all(faseIds.map(async (id) => (map[id] = await getLeccionNombre(id, token))));
             return map;
           })(),
         ]);
@@ -155,7 +155,7 @@ export default function TablaRecomendacionesIA({ cursoId }: { cursoId: string })
                   className={`border-b ${idx % 2 === 1 ? "bg-[#F4F8FB]" : "bg-white"} hover:bg-[#eaf6fd]`}
                 >
                   <td className="py-2 px-4">{userNames[rec.estudiante] || rec.estudiante}</td>
-                  <td className="py-2 px-4">{leccionNames[rec.leccion || rec.fase] || rec.leccion || rec.fase}</td>
+                  <td className="py-2 px-4">{leccionNames[rec.fase || ""] || rec.fase}</td>
                   <td className="py-2 px-4">{rec.mensaje}</td>
                   <td className="py-2 px-4">
                     {Array.isArray(rec.acciones)

@@ -21,8 +21,7 @@ interface Historial {
   id: string;
   curso: string;
   nivel: string;
-  leccion?: string;
-  fase?: string;
+  fase?: string;  // Backend uses 'fase' field
   actividad: string;
   score_atencion: number;
   nota_academica: number;
@@ -63,11 +62,11 @@ export default function DetalleEstudianteDocentePage({
         const data = res.data || [];
         setHistorial(data);
 
-        // IDs únicos de lecciones/fases
-        const lecIds = Array.from(new Set(data.map((h: any) => h.leccion || h.fase).filter(Boolean)));
+        // IDs únicos de fases (mostradas como lecciones al usuario)
+        const faseIds = Array.from(new Set(data.map((h: any) => h.fase).filter(Boolean))) as string[];
         const leccionMap: Record<string, string> = {};
         await Promise.all(
-          lecIds.map(async (id) => {
+          faseIds.map(async (id) => {
             leccionMap[id] = await getLeccionNombre(id, token);
           })
         );
@@ -117,7 +116,7 @@ export default function DetalleEstudianteDocentePage({
                 {historial.map((h) => (
                   <tr key={h.id} className="border-b hover:bg-[#F4F8FB]">
                     <td className="py-2 px-4">{h.nivel}</td>
-                    <td className="py-2 px-4">{leccionNames[h.leccion || h.fase] || h.leccion || h.fase}</td>
+                    <td className="py-2 px-4">{leccionNames[h.fase || ""] || h.fase}</td>
                     <td className="py-2 px-4">{h.actividad}</td>
                     <td className="py-2 px-4 text-center">{h.score_atencion ?? "-"}</td>
                     <td className="py-2 px-4 text-center">{h.nota_academica ?? "-"}</td>

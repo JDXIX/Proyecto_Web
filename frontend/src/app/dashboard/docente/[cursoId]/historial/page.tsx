@@ -71,8 +71,8 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
         setHistorial(data);
 
         // IDs únicos de estudiantes y lecciones
-        const estIds = Array.from(new Set(data.map((h: any) => h.estudiante).filter(Boolean)));
-        const lecIds = Array.from(new Set(data.map((h: any) => h.leccion || h.fase).filter(Boolean)));
+        const estIds = Array.from(new Set(data.map((h: any) => h.estudiante).filter(Boolean))) as string[];
+        const faseIds = Array.from(new Set(data.map((h: any) => h.fase).filter(Boolean))) as string[];
 
         // Resuelve nombres en paralelo
         const [userMap, leccionMap] = await Promise.all([
@@ -83,7 +83,7 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
           })(),
           (async () => {
             const map: Record<string, string> = {};
-            await Promise.all(lecIds.map(async (id) => (map[id] = await getLeccionNombre(id, token))));
+            await Promise.all(faseIds.map(async (id) => (map[id] = await getLeccionNombre(id, token))));
             return map;
           })(),
         ]);
@@ -134,7 +134,7 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
                   <tr key={h.id} className="border-b hover:bg-[#F4F8FB]">
                     <td className="py-2 px-4">{userNames[h.estudiante] || h.estudiante}</td>
                     <td className="py-2 px-4">{h.nivel}</td>
-                    <td className="py-2 px-4">{leccionNames[h.leccion || h.fase] || h.leccion || h.fase}</td>
+                    <td className="py-2 px-4">{leccionNames[h.fase || ""] || h.fase}</td>
                     <td className="py-2 px-4">{h.actividad}</td>
                     <td className="py-2 px-4 text-center">{h.score_atencion ?? "-"}</td>
                     <td className="py-2 px-4 text-center">{h.nota_academica ?? "-"}</td>

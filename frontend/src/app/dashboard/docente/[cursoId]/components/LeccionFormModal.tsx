@@ -62,7 +62,6 @@ export default function LeccionFormModal({
       onClose();
     } catch (err: any) {
       setError("Error al guardar la lección. La lección ya existe. Verifique crear una lección que no exista.");
-      setError("");
     } finally {
       setLoading(false);
     }

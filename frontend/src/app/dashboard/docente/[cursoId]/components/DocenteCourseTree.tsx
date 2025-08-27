@@ -24,6 +24,7 @@ interface Leccion {
   id: string;
   nombre: string;
   nivel: string;
+  orden: number;
 }
 
 interface Recurso {

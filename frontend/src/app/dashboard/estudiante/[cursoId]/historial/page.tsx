@@ -8,7 +8,7 @@ interface Historial {
   id: string;
   curso: string;
   nivel: string;
-  leccion: string; // Cambiado de 'fase' a 'leccion'
+  fase: string; // Backend uses 'fase' field
   actividad: string;
   score_atencion: number;
   nota_academica: number;
@@ -80,7 +80,7 @@ export default function HistorialEstudiantePage({ params }: { params: { cursoId:
                 {historial.map((h) => (
                   <tr key={h.id} className="border-b hover:bg-[#F4F8FB]">
                     <td className="py-2 px-4">{h.nivel}</td>
-                    <td className="py-2 px-4">{h.leccion || h.fase}</td>
+                    <td className="py-2 px-4">{h.fase}</td>
                     <td className="py-2 px-4">{h.actividad}</td>
                     <td className="py-2 px-4 text-center">{h.score_atencion ?? "-"}</td>
                     <td className="py-2 px-4 text-center">{h.nota_academica ?? "-"}</td>

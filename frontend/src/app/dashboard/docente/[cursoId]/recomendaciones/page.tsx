@@ -64,8 +64,8 @@ export default function RecomendacionesDocentePage({ params }: { params: { curso
         setRecomendaciones(data);
 
         // IDs únicos de estudiantes y lecciones
-        const estIds = Array.from(new Set(data.map((r: any) => r.estudiante).filter(Boolean)));
-        const lecIds = Array.from(new Set(data.map((r: any) => r.leccion || r.fase).filter(Boolean)));
+        const estIds = Array.from(new Set(data.map((r: any) => r.estudiante).filter(Boolean))) as string[];
+        const faseIds = Array.from(new Set(data.map((r: any) => r.fase).filter(Boolean))) as string[];
 
         // Resuelve nombres en paralelo
         const [userMap, leccionMap] = await Promise.all([
@@ -76,7 +76,7 @@ export default function RecomendacionesDocentePage({ params }: { params: { curso
           })(),
           (async () => {
             const map: Record<string, string> = {};
-            await Promise.all(lecIds.map(async (id) => (map[id] = await getLeccionNombre(id, token))));
+            await Promise.all(faseIds.map(async (id) => (map[id] = await getLeccionNombre(id, token))));
             return map;
           })(),
         ]);
@@ -123,7 +123,7 @@ export default function RecomendacionesDocentePage({ params }: { params: { curso
                 {recomendaciones.map((rec) => (
                   <tr key={rec.id} className="border-b hover:bg-[#F4F8FB]">
                     <td className="py-2 px-4">{userNames[rec.estudiante] || rec.estudiante}</td>
-                    <td className="py-2 px-4">{leccionNames[rec.leccion || rec.fase] || rec.leccion || rec.fase}</td>
+                    <td className="py-2 px-4">{leccionNames[rec.fase || ""] || rec.fase}</td>
                     <td className="py-2 px-4">{rec.mensaje}</td>
                     <td className="py-2 px-4">
                       {Array.isArray(rec.acciones)

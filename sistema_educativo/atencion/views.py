@@ -7,7 +7,7 @@ from .serializers import SesionMonitoreoSerializer, AtencionVisualSerializer, No
 from django.utils import timezone
 
 # Importa el script actualizado
-from atencion.scripts.deteccion_facial import monitorear_atencion_durante_tiempo
+# from atencion.scripts.deteccion_facial import monitorear_atencion_durante_tiempo
 
 from cursos.models import Recurso, Fase, Curso, Inscripcion
 from usuarios.models import Usuario
@@ -60,10 +60,17 @@ class SesionMonitoreoViewSet(viewsets.ModelViewSet):
                 segundos = 30
 
             # Ejecuta el monitoreo visual con la duración correcta
-            resultados = monitorear_atencion_durante_tiempo(
-                segundos=segundos,
-                mostrar_ventana=False
-            )
+            # TEMPORARILY DISABLED: resultados = monitorear_atencion_durante_tiempo(
+            #     segundos=segundos,
+            #     mostrar_ventana=False
+            # )
+            # Mock results for development
+            resultados = {
+                "promedio_desviacion": 15.0,
+                "porcentaje_cierre_ojos": 10.0,
+                "porcentaje_cabeza_fuera": 5.0,
+                "porcentaje_presencia": 95.0
+            }
 
             # Extrae patrones con valores por defecto (0-100)
             promedio_desviacion = float(resultados.get("promedio_desviacion", 0.0) or 0.0)           # 0..100
