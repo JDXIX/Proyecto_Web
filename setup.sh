@@ -51,6 +51,9 @@ echo "📥 Instalando dependencias de Python..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
+echo "⚠️  Nota: Las funciones de monitoreo de atención requieren dependencias adicionales."
+echo "   Para habilitarlas, ejecuta: pip install -r requirements-cv.txt"
+
 # Crear archivo .env si no existe
 if [ ! -f ".env" ]; then
     echo "📝 Creando archivo de configuración .env..."

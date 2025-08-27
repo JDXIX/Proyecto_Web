@@ -6,8 +6,15 @@ from .models import SesionMonitoreo, AtencionVisual, NotaAcademica
 from .serializers import SesionMonitoreoSerializer, AtencionVisualSerializer, NotaAcademicaSerializer
 from django.utils import timezone
 
-# Importa el script actualizado
-from atencion.scripts.deteccion_facial import monitorear_atencion_durante_tiempo
+# Importa el script actualizado (opcional)
+try:
+    from atencion.scripts.deteccion_facial import monitorear_atencion_durante_tiempo
+    COMPUTER_VISION_AVAILABLE = True
+except ImportError:
+    # Computer vision dependencies not installed
+    COMPUTER_VISION_AVAILABLE = False
+    def monitorear_atencion_durante_tiempo(*args, **kwargs):
+        return {"error": "Computer vision dependencies not installed. Install with: pip install -r requirements-cv.txt"}
 
 from cursos.models import Recurso, Fase, Curso, Inscripcion
 from usuarios.models import Usuario

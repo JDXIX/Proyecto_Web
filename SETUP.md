@@ -111,10 +111,17 @@ Una vez configurado:
 ## 🚨 Solución de Problemas Comunes
 
 ### Error: "No module named 'cv2'"
-El proyecto requiere OpenCV para funciones de monitoreo de atención. Si no necesitas estas funciones:
+El proyecto incluye funciones opcionales de monitoreo de atención que requieren OpenCV. Estas funciones son opcionales:
+
 ```bash
+# Para habilitar funciones de monitoreo de atención:
+pip install -r requirements-cv.txt
+
+# O instalar manualmente:
 pip install opencv-python mediapipe numpy
 ```
+
+Si no necesitas estas funciones, el proyecto funcionará sin ellas.
 
 ### Error de puerto ocupado
 Si los puertos 3000 u 8000 están ocupados:

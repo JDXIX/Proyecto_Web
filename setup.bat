@@ -55,6 +55,9 @@ echo 📥 Instalando dependencias de Python...
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
+echo ⚠️  Nota: Las funciones de monitoreo de atención requieren dependencias adicionales.
+echo    Para habilitarlas, ejecuta: pip install -r requirements-cv.txt
+
 REM Crear archivo .env si no existe
 if not exist ".env" (
     echo 📝 Creando archivo de configuración .env...
