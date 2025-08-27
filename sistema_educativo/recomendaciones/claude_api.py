@@ -2,11 +2,11 @@ import os
 import json
 import requests
 
-CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")  # Lee desde entorno
+CLAUDE_API_KEY = os.getenv("ANTHROPIC_API_KEY")  # Changed from CLAUDE_API_KEY to ANTHROPIC_API_KEY
 
 def _call_claude(prompt: str):
     if not CLAUDE_API_KEY:
-        return None, "CLAUDE_API_KEY no configurada"
+        return None, "ANTHROPIC_API_KEY no configurada"
     url = "https://api.anthropic.com/v1/messages"
     headers = {
         "x-api-key": CLAUDE_API_KEY,

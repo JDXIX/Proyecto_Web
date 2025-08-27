@@ -1,0 +1,36 @@
+# Django Core
+Django==5.2.4
+djangorestframework==3.15.2
+django-cors-headers==4.4.0
+
+# JWT Authentication
+djangorestframework-simplejwt==5.3.0
+
+# API Documentation
+drf-yasg==1.21.8
+
+# Computer Vision for Attention Monitoring
+opencv-python==4.10.0.84
+mediapipe==0.10.14
+numpy==2.1.1
+
+# HTTP Requests for API calls
+requests==2.31.0
+
+# Environment Variables Management
+python-decouple==3.8
+
+# Database URL parsing
+dj-database-url==2.1.0
+
+# Setup tools for pkg_resources
+setuptools==70.0.0
+
+# Image Processing (optional, for additional features)
+Pillow==10.4.0
+
+# Production WSGI Server (optional)
+gunicorn==22.0.0
+
+# PostgreSQL adapter (optional, for production)
+psycopg2-binary==2.9.9

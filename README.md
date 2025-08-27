@@ -100,33 +100,56 @@ Notas:
 
 ## 🛠️ Instalación y ejecución (desarrollo)
 
-1) Clonar el repo
+> **📖 ¡NUEVO!** Para una guía de instalación completa y detallada, consulta [INSTALACION.md](./INSTALACION.md)
+
+### Instalación Rápida
+
+**Linux/Mac:**
+```sh
+git clone <URL-del-repo>
+cd Proyecto_Web
+chmod +x setup.sh
+./setup.sh
+```
+
+**Windows:**
+```cmd
+git clone <URL-del-repo>
+cd Proyecto_Web
+setup.bat
+```
+
+### Instalación Manual
+
+1) **Clonar el repositorio**
 ```sh
 git clone <URL-del-repo>
 cd Proyecto_Web
 ```
 
-2) Backend (Django)
+2) **Backend (Django)**
 ```sh
 cd sistema_educativo
 python -m venv venv
 # Windows:
 venv\Scripts\activate
 # Linux/Mac:
-# source venv/bin/activate
+source venv/bin/activate
 
 pip install -r requirements.txt
-# Crea sistema_educativo/.env con las variables anteriores
+# Crea sistema_educativo/.env copiando desde .env.example
+cp .env.example .env
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 ```
 Backend disponible en: http://localhost:8000
 
-3) Frontend (Next.js)
+3) **Frontend (Next.js)**
 ```sh
 cd ../frontend
-# Crea frontend/.env.local con NEXT_PUBLIC_API_URL
+# Crea frontend/.env.local copiando desde .env.local.example
+cp .env.local.example .env.local
 bun install          # o npm install / pnpm install
 bun run dev          # o npm run dev / pnpm dev
 ```
