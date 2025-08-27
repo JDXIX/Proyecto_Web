@@ -110,6 +110,9 @@ git clone <URL-del-repo>
 cd Proyecto_Web
 chmod +x setup.sh
 ./setup.sh
+
+# Verificar instalación (opcional)
+./verify-setup.sh
 ```
 
 **Windows:**
@@ -117,6 +120,9 @@ chmod +x setup.sh
 git clone <URL-del-repo>
 cd Proyecto_Web
 setup.bat
+
+REM Verificar instalación (opcional)
+verify-setup.bat
 ```
 
 ### Instalación Manual

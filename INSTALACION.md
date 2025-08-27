@@ -97,6 +97,28 @@ bun install
 npm install
 ```
 
+## 🔍 Verificación de la Instalación
+
+Después de completar la instalación, puedes verificar que todo esté funcionando correctamente:
+
+### Linux/Mac:
+```bash
+./verify-setup.sh
+```
+
+### Windows:
+```cmd
+verify-setup.bat
+```
+
+Este script verificará:
+- ✅ Que el entorno virtual de Python esté creado
+- ✅ Que todas las dependencias estén instaladas
+- ✅ Que los archivos .env estén configurados
+- ✅ Que Django funcione correctamente
+- ✅ Que las migraciones estén aplicadas
+- ✅ Que Next.js compile sin errores
+
 ## 🚀 Ejecutar el Proyecto
 
 ### Iniciar Backend (Django)
