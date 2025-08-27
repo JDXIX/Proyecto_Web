@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   getNiveles,
   getLecciones,
@@ -56,12 +56,12 @@ export default function DocenteCourseTree({ cursoId }: { cursoId: string }) {
   const [recursoLeccionId, setRecursoLeccionId] = useState<string>("");
 
   // Refresca niveles después de crear/editar/eliminar
-  const refreshNiveles = () => {
+  const refreshNiveles = useCallback(() => {
     const token = localStorage.getItem("token");
     if (token && cursoId) {
       getNiveles(cursoId, token).then(setNiveles);
     }
-  };
+  }, [cursoId]);
 
   // Refresca lecciones de un nivel
   const refreshLecciones = (nivelId: string) => {
@@ -85,7 +85,7 @@ export default function DocenteCourseTree({ cursoId }: { cursoId: string }) {
 
   useEffect(() => {
     refreshNiveles();
-  }, [cursoId]);
+  }, [refreshNiveles]);
 
   const handleExpandNivel = (nivelId: string) => {
     setExpandedNiveles(prev =>

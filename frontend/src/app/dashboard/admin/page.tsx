@@ -6,9 +6,10 @@ import { useEffect, useState } from "react";
 import { getUsuarioActual } from "@/services/usuarios";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Link from "next/link";
+import type { Usuario } from "@/types";
 
 export default function AdminDashboard() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { LoginCredentials, RegisterData, AuthTokens, AuthUser } from "../types";
+import type { RegisterData, AuthTokens, AuthUser } from "../types";
 
 const API_URL = "http://localhost:8000/api/token/";
 const REGISTER_URL = "http://localhost:8000/api/usuarios/";

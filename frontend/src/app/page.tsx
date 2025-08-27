@@ -28,7 +28,6 @@ export default function LoginPage() {
         router.push("/dashboard");
       }
     } catch (error: unknown) {
-      const err = error as { message?: string };
       setError("Usuario o contraseña incorrectos.");
     }
   };

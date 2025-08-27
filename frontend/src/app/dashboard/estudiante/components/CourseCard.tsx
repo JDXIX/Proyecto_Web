@@ -3,12 +3,10 @@
 import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import type { Curso } from "@/types";
 
 interface CourseCardProps {
-  curso: {
-    id: number | string;
-    nombre: string;
-    descripcion?: string;
+  curso: Curso & {
     icono?: string;
     imagen?: string;
   };
