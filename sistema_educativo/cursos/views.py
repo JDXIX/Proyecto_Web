@@ -64,7 +64,7 @@ class NivelViewSet(viewsets.ModelViewSet):
         return queryset
 
 class FaseViewSet(viewsets.ModelViewSet):
-    queryset = Fase.objects.all()
+    queryset = Fase.objects.all().order_by('nivel', 'orden')
     serializer_class = FaseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -73,7 +73,7 @@ class FaseViewSet(viewsets.ModelViewSet):
         nivel_id = self.request.query_params.get("nivel")
         if nivel_id:
             queryset = queryset.filter(nivel_id=nivel_id)
-        return queryset
+        return queryset.order_by('orden')
 
 class RecursoViewSet(viewsets.ModelViewSet):
     queryset = Recurso.objects.all()
