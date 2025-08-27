@@ -92,7 +92,7 @@ def generar_recomendacion_ia(request):
             curso=curso,
             nivel=nivel,
             fase=fase,
-            actividad=recurso,
+            recurso=recurso,
             score_atencion=atencion,
             nota_academica=nota,
             recomendacion=rec,
