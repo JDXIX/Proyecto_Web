@@ -1,0 +1,33 @@
+# Django core
+Django>=5.2.0,<5.3.0
+
+# Django REST Framework
+djangorestframework>=3.14.0
+
+# CORS handling
+django-cors-headers>=4.0.0
+
+# JWT Authentication
+djangorestframework-simplejwt>=5.2.0
+
+# API documentation
+drf-yasg>=1.21.0
+
+# HTTP requests for AI API calls
+requests>=2.28.0
+
+# Computer Vision and AI Dependencies (for attention monitoring)
+# Note: These packages are large. Install only if you need attention monitoring features:
+# opencv-python>=4.8.0
+# mediapipe>=0.10.0
+# numpy>=1.24.0
+
+# Environment variables (optional but recommended)
+python-decouple>=3.8
+
+# Production server (optional)
+gunicorn>=21.0.0
+
+# Database drivers (optional - uncomment if needed)
+# psycopg2-binary>=2.9.0  # PostgreSQL
+# mysqlclient>=2.1.0      # MySQL

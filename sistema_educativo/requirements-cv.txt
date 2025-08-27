@@ -1,0 +1,15 @@
+# Dependencias opcionales para el monitoreo de atención con visión computacional
+# Estas dependencias son requeridas solo si planeas usar las funciones de 
+# monitoreo de atención facial en tiempo real.
+
+# Visión Computacional
+opencv-python>=4.8.0
+
+# MediaPipe para detección facial
+mediapipe>=0.10.0
+
+# NumPy para cálculos numéricos
+numpy>=1.24.0
+
+# Para instalar estas dependencias opcionales:
+# pip install -r requirements-cv.txt
