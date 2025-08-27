@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { register } from "@/services/auth";
 
 export default function RegistroPage() {
@@ -24,10 +25,11 @@ export default function RegistroPage() {
     setSuccess("");
     try {
       // Siempre enviar rol en minúsculas
-      await register({ ...form, rol: "estudiante" });
+      await register({ ...form, rol: "estudiante", username: form.email });
       setSuccess("¡Registro exitoso! Ahora puedes iniciar sesión.");
       setTimeout(() => router.push("/"), 2000);
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       setError(err?.message || "Error al registrar usuario.");
     }
   };
@@ -92,9 +94,9 @@ export default function RegistroPage() {
         </form>
         <div className="mt-4 text-center">
           <span>¿Ya tienes cuenta? </span>
-          <a href="/" className="text-[#00B7EB] hover:underline font-semibold">
+          <Link href="/" className="text-[#00B7EB] hover:underline font-semibold">
             Inicia sesión
-          </a>
+          </Link>
         </div>
       </div>
     </div>

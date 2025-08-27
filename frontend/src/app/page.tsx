@@ -27,7 +27,8 @@ export default function LoginPage() {
       } else {
         router.push("/dashboard");
       }
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       setError("Usuario o contraseña incorrectos.");
     }
   };
@@ -81,9 +82,16 @@ export default function LoginPage() {
               </button>
             </div>
             <div className="text-center mt-2">
-              <a href="/olvide-password" className="text-[#00B7EB] text-sm hover:underline">
+              <button
+                type="button"
+                className="text-[#00B7EB] text-sm hover:underline bg-transparent border-0 cursor-pointer"
+                onClick={() => {
+                  // Add forgot password functionality here
+                  console.log("Forgot password clicked");
+                }}
+              >
                 Olvidé mi contraseña
-              </a>
+              </button>
             </div>
           </form>
         </div>

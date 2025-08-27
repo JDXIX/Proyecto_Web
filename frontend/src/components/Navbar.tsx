@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function Navbar() {
@@ -15,10 +16,12 @@ export default function Navbar() {
   return (
     <nav className="w-full bg-[#003087] text-white shadow flex items-center justify-between px-6 py-2 z-50 fixed top-0 left-0">
       <div className="flex items-center gap-4">
-        <img
+        <Image
           src="/logo-jmvision.png"
           alt="JM Vision Logo"
-          className="h-10 w-10 rounded-full bg-white p-1"
+          width={40}
+          height={40}
+          className="rounded-full bg-white p-1"
         />
         <span className="text-xl font-bold tracking-wide">JM Vision</span>
         <Link href="/dashboard/estudiante" className="ml-6 hover:underline">
