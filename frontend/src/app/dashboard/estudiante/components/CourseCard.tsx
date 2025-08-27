@@ -1,13 +1,12 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+import type { Curso } from "@/types";
 
 interface CourseCardProps {
-  curso: {
-    id: number | string;
-    nombre: string;
-    descripcion?: string;
+  curso: Curso & {
     icono?: string;
     imagen?: string;
   };
@@ -32,10 +31,12 @@ export default function CourseCard({ curso }: CourseCardProps) {
     >
       <div className="rounded-full bg-white shadow-lg border-4 border-[#00B7EB] w-28 h-28 flex items-center justify-center mb-3 transition group-hover:shadow-2xl group-hover:scale-105">
         {curso.imagen ? (
-          <img
+          <Image
             src={curso.imagen}
             alt={curso.nombre}
-            className="w-20 h-20 object-contain rounded-full"
+            width={80}
+            height={80}
+            className="object-contain rounded-full"
           />
         ) : (
           <svg

@@ -1,8 +1,9 @@
 import React from "react";
 import CourseCard from "./CourseCard";
+import type { Curso } from "@/types";
 
 interface CourseGridProps {
-  cursos: any[];
+  cursos: Curso[];
 }
 
 export default function CourseGrid({ cursos }: CourseGridProps) {

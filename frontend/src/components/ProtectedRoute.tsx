@@ -1,10 +1,11 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import type { AuthUser } from "../types";
 
 interface Props {
   allowedRoles: string[];
-  user: any;
+  user: AuthUser | null;
   children: React.ReactNode;
 }
 

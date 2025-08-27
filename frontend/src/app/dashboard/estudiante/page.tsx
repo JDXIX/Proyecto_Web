@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { FiSearch, FiList } from "react-icons/fi";
 import { getCursos } from "@/services/cursos";
 import Link from "next/link";
+import type { Curso } from "@/types";
 
 export default function EstudianteDashboard() {
-  const [cursos, setCursos] = useState<any[]>([]);
+  const [cursos, setCursos] = useState<Curso[]>([]);
   const [search, setSearch] = useState("");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
 
