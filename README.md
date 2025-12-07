@@ -33,7 +33,7 @@ Este sistema fue reconstruido, optimizado y extendido a partir del repositorio o
 - Next.js 15 (App Router)
 - Tailwind CSS
 - Bun como runtime
-- Integración directa con el backend vía axios / fetch
+- Integración directa con el backend
 
 ### ⚙️ Backend Robusto
 
@@ -85,7 +85,7 @@ Proyecto_Web/
 ### Frontend
 
 - Node.js 20+
-- Bun (o npm/pnpm como alternativa)
+- Bun 
 
 ---
 
@@ -169,7 +169,7 @@ Frontend disponible en:
 ### Roles disponibles
 
 - **Admin**: gestión completa de usuarios, cursos e inscripciones
-- **Docente**: gestión de cursos, fases, lecciones, recursos y sesiones de monitoreo
+- **Docente**: gestión de fases, lecciones, recursos y sesiones de monitoreo
 - **Estudiante**: acceso a cursos inscritos y participación en monitoreo de atención
 
 ---
@@ -179,13 +179,13 @@ Frontend disponible en:
 ### Admin
 
 - CRUD de usuarios (incluye cambio de rol y reset de contraseña)
-- Alta y edición de cursos
+- Creacion y edición de cursos
 - Configuración básica del sistema
 
 ### Docente
 
 - Crear/editar:
-  - Cursos, fases, lecciones y recursos
+  - Fases, lecciones y recursos
   - Flags por recurso: `permite_monitoreo`, `es_evaluable`
 - **Inscripciones**:
   - Individual desde el panel
@@ -194,8 +194,7 @@ Frontend disponible en:
   - Crear sesiones en lote para todos los estudiantes: `/api/sesiones/crear-multiples/`
   - Consultar lista de sesiones por recurso
 - **Notas y reportes**:
-  - Visualizar resultados de atención y `nota_combinada`
-  - Revisar recomendaciones IA
+  - Visualizar resultados de atención 
 
 ### Estudiante
 
@@ -205,9 +204,9 @@ Frontend disponible en:
 
 ---
 
-## 🧠 Módulo de Atención (Actualizado)
+## 🧠 Módulo de Atención 
 
-### 🆕 **Ahora el procesamiento es 100% web**
+### 🆕 **Procesamiento es 100% web**
 
 ### Pipeline completo:
 
@@ -270,13 +269,6 @@ GET  /api/usuarios/
 POST /api/inscripciones/
 ```
 
-### Recomendaciones IA
-
-```
-GET /api/recomendaciones/
-```
-
----
 
 ## 🧪 Pruebas
 
@@ -297,7 +289,7 @@ bun test  # si tienes tests configurados
 
 ---
 
-## 🛑 Troubleshooting
+## 🛑 Errores
 
 ### Errores comunes
 
@@ -327,41 +319,6 @@ bun test  # si tienes tests configurados
 
 ---
 
-## 🚢 Despliegue (guía rápida)
-
-### Backend (Linux/Servidor)
-
-1. Configurar variables de entorno en producción
-2. `DEBUG=False`
-3. Base de datos **PostgreSQL** (usando `DATABASE_URL`)
-4. Ejecutar:
-   ```bash
-   python manage.py collectstatic
-   python manage.py migrate
-   ```
-5. Servir con:
-   - `gunicorn` o `uvicorn` detrás de **nginx**
-   - Servir `STATIC` y `MEDIA` desde nginx
-
-### Frontend
-
-1. Configurar `NEXT_PUBLIC_API_URL` con URL pública del backend
-2. Build de producción:
-   ```bash
-   bun run build
-   ```
-3. Desplegar en: Vercel, Netlify, Railway u otro proveedor compatible con Next.js
-
----
-
-## 👨‍💻 Convenios de desarrollo
-
-- Usar formateo y linting del frontend (ESLint + Prettier)
-- Commits claros y descriptivos
-- No exponer claves ni tokens en el repositorio
-- Usar `.env` y secretos del proveedor de hosting
-
----
 
 ## 👤 Autor
 
