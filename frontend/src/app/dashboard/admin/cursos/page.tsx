@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getCursos, crearCurso, editarCurso, eliminarCurso } from "@/services/cursos";
+import {
+  getCursos,
+  crearCurso,
+  editarCurso,
+  eliminarCurso,
+} from "@/services/cursos";
 import { getUsuarios, getUsuarioActual } from "@/services/usuarios";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -23,27 +28,31 @@ export default function CursosPage() {
   const [showEditModal, setShowEditModal] = useState(false);
 
   const [mensaje, setMensaje] = useState("");
-  const [tipoMensajeGeneral, setTipoMensajeGeneral] = useState<"success" | "error" | "">("");
+  const [tipoMensajeGeneral, setTipoMensajeGeneral] = useState<
+    "success" | "error" | ""
+  >("");
 
   // Obtener docentes activos
   const docentes = usuarios.filter(
-    (u) => (u.rol?.toLowerCase() === "docente") && (u.estado === "Activo" || u.is_active)
+    (u) =>
+      u.rol?.toLowerCase() === "docente" &&
+      (u.estado === "Activo" || u.is_active)
   );
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       getUsuarioActual(token)
-        .then(userData => setUser(userData))
+        .then((userData) => setUser(userData))
         .catch(() => {})
         .finally(() => setLoading(false));
 
       getUsuarios(token)
-        .then(data => setUsuarios(data))
+        .then((data) => setUsuarios(data))
         .catch(() => {});
 
       getCursos(token)
-        .then(data => setCursos(data))
+        .then((data) => setCursos(data))
         .catch(() => {});
     } else {
       setLoading(false);
@@ -58,18 +67,28 @@ export default function CursosPage() {
     // eslint-disable-next-line
   }, [showModal, docentes.length]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setNuevoCurso({
       ...nuevoCurso,
-      [e.target.name]: e.target.name === "umbral_nota" ? Number(e.target.value) : e.target.value,
+      [e.target.name]:
+        e.target.name === "umbral_nota"
+          ? Number(e.target.value)
+          : e.target.value,
     });
   };
 
-  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleEditInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     if (cursoEnEdicion) {
       setCursoEnEdicion({
         ...cursoEnEdicion,
-        [e.target.name]: e.target.name === "umbral_nota" ? Number(e.target.value) : e.target.value,
+        [e.target.name]:
+          e.target.name === "umbral_nota"
+            ? Number(e.target.value)
+            : e.target.value,
       });
     }
   };
@@ -90,7 +109,12 @@ export default function CursosPage() {
     try {
       const cursoCreado = await crearCurso(nuevoCurso, token);
       setCursos([...cursos, cursoCreado]);
-      setNuevoCurso({ nombre: "", descripcion: "", docente: "", umbral_nota: 70 });
+      setNuevoCurso({
+        nombre: "",
+        descripcion: "",
+        docente: "",
+        umbral_nota: 70,
+      });
       setShowModal(false);
       setMensaje("Curso creado correctamente");
       setTipoMensajeGeneral("success");
@@ -147,8 +171,14 @@ export default function CursosPage() {
       return;
     }
     try {
-      const cursoEditado = await editarCurso(cursoEnEdicion.id, cursoEnEdicion, token);
-      setCursos(cursos.map((c) => c.id === cursoEditado.id ? cursoEditado : c));
+      const cursoEditado = await editarCurso(
+        cursoEnEdicion.id,
+        cursoEnEdicion,
+        token
+      );
+      setCursos(
+        cursos.map((c) => (c.id === cursoEditado.id ? cursoEditado : c))
+      );
       setCursoEnEdicion(null);
       setShowEditModal(false);
       setMensaje("Curso actualizado correctamente");
@@ -164,61 +194,101 @@ export default function CursosPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="text-xl font-semibold">Cargando...</div>
-    </div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg)]">
+        <div className="text-lg md:text-xl font-semibold text-[var(--color-text)]">
+          Cargando...
+        </div>
+      </div>
+    );
   }
 
   return (
     <ProtectedRoute allowedRoles={["admin", "administrador"]} user={user}>
-      <div className="p-8 w-full max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold text-[#003087] mb-6">Gestión de Cursos</h1>
-        {mensaje && (
-          <div className={`mb-4 p-3 rounded ${
-            tipoMensajeGeneral === "success" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-          }`}>
-            {mensaje}
+      <div className="w-full h-full px-4 md:px-8 py-6 md:py-8 max-w-6xl mx-auto space-y-6">
+        {/* HEADER: título + botón */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="title mb-1">Gestión de Cursos</h1>
+            <p className="text-sm text-[var(--color-text-light)]">
+              Crea, actualiza y administra los cursos activos de la plataforma.
+            </p>
           </div>
-        )}
-        <div className="flex items-center justify-between mb-4">
           <button
-            className="bg-[#00B7EB] text-white px-4 py-2 rounded font-semibold hover:bg-[#009fc2] transition"
+            className="btn-primary"
             onClick={() => setShowModal(true)}
           >
             Crear curso
           </button>
         </div>
-        <div className="overflow-x-auto rounded shadow mb-6">
-          <table className="min-w-full bg-white border border-[#D3D3D3]">
-            <thead>
-              <tr className="bg-[#F4F8FB] text-[#003087]">
-                <th className="py-2 px-4 border-b">ID</th>
-                <th className="py-2 px-4 border-b">Nombre</th>
-                <th className="py-2 px-4 border-b">Descripción</th>
-                <th className="py-2 px-4 border-b">Docente</th>
-                <th className="py-2 px-4 border-b">Umbral Nota (%)</th>
-                <th className="py-2 px-4 border-b">Acciones</th>
+
+        {/* MENSAJE / ALERTA */}
+        {mensaje && (
+          <div
+            className={`mb-2 p-3 rounded-lg border text-sm ${
+              tipoMensajeGeneral === "success"
+                ? "bg-green-50 text-green-700 border-green-300"
+                : "bg-red-50 text-red-700 border-red-300"
+            }`}
+          >
+            {mensaje}
+          </div>
+        )}
+
+        {/* TABLA */}
+        <div className="bg-white rounded-2xl shadow-sm border border-[var(--color-border)] overflow-x-auto">
+          <table className="min-w-full bg-white">
+            <thead className="bg-[#F6F7FB] text-[var(--color-text)] border-b border-[var(--color-border)]">
+              <tr>
+                <th className="py-3 px-4 text-left text-sm font-medium">ID</th>
+                <th className="py-3 px-4 text-left text-sm font-medium">
+                  Nombre
+                </th>
+                <th className="py-3 px-4 text-left text-sm font-medium">
+                  Descripción
+                </th>
+                <th className="py-3 px-4 text-left text-sm font-medium">
+                  Docente
+                </th>
+                <th className="py-3 px-4 text-left text-sm font-medium">
+                  Umbral Nota (%)
+                </th>
+                <th className="py-3 px-4 text-left text-sm font-medium">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody>
               {cursos.map((c) => (
-                <tr key={c.id} className="hover:bg-[#F4F8FB]">
-                  <td className="py-2 px-4 border-b">{c.id}</td>
-                  <td className="py-2 px-4 border-b">{c.nombre}</td>
-                  <td className="py-2 px-4 border-b">{c.descripcion}</td>
-                  <td className="py-2 px-4 border-b">
-                    {usuarios.find((u) => u.id === c.docente)?.first_name || c.docente}
+                <tr
+                  key={c.id}
+                  className="hover:bg-[var(--color-bg)] transition border-b border-[var(--color-border)]"
+                >
+                  <td className="py-2 px-4 text-xs text-[var(--color-text-light)]">
+                    {c.id}
                   </td>
-                  <td className="py-2 px-4 border-b">{c.umbral_nota}</td>
-                  <td className="py-2 px-4 border-b">
+                  <td className="py-2 px-4 text-sm font-medium text-[var(--color-text)]">
+                    {c.nombre}
+                  </td>
+                  <td className="py-2 px-4 text-sm text-[var(--color-text-light)]">
+                    {c.descripcion}
+                  </td>
+                  <td className="py-2 px-4 text-sm text-[var(--color-text)]">
+                    {usuarios.find((u) => u.id === c.docente)?.first_name ||
+                      c.docente}
+                  </td>
+                  <td className="py-2 px-4 text-sm text-[var(--color-text)]">
+                    {c.umbral_nota}
+                  </td>
+                  <td className="py-2 px-4 text-sm">
                     <button
-                      className="text-[#00B7EB] hover:underline mr-2"
+                      className="text-[var(--color-primary)] hover:underline mr-3"
                       onClick={() => handleEditarCurso(c)}
                     >
                       Editar
                     </button>
                     <button
-                      className="text-[#DC2626] hover:underline"
+                      className="text-[var(--color-error)] hover:underline"
                       onClick={() => handleEliminarCurso(c.id)}
                     >
                       Eliminar
@@ -230,40 +300,42 @@ export default function CursosPage() {
           </table>
         </div>
 
-        {/* Modal para crear curso */}
+        {/* MODAL CREAR CURSO */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-              <h3 className="text-xl font-bold mb-4 text-[#003087]">Crear nuevo curso</h3>
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md border border-[var(--color-border)]">
+              <h3 className="text-xl font-semibold mb-4 text-[var(--color-primary)]">
+                Crear nuevo curso
+              </h3>
               <form onSubmit={handleCrearCurso} className="space-y-4">
                 <div>
-                  <label className="block font-semibold mb-1">Nombre</label>
+                  <label className="block font-medium mb-1">Nombre</label>
                   <input
                     type="text"
                     name="nombre"
                     value={nuevoCurso.nombre}
                     onChange={handleInputChange}
-                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Descripción</label>
+                  <label className="block font-medium mb-1">Descripción</label>
                   <input
                     type="text"
                     name="descripcion"
                     value={nuevoCurso.descripcion}
                     onChange={handleInputChange}
-                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Docente</label>
+                  <label className="block font-medium mb-1">Docente</label>
                   <select
                     name="docente"
                     value={nuevoCurso.docente}
                     onChange={handleInputChange}
-                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     required
                   >
                     <option value="">Selecciona un docente</option>
@@ -275,7 +347,9 @@ export default function CursosPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Umbral Nota (%)</label>
+                  <label className="block font-medium mb-1">
+                    Umbral Nota (%)
+                  </label>
                   <input
                     type="number"
                     name="umbral_nota"
@@ -283,22 +357,19 @@ export default function CursosPage() {
                     min={0}
                     max={100}
                     onChange={handleInputChange}
-                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     required
                   />
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                   <button
                     type="button"
-                    className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
+                    className="btn-ghost"
                     onClick={() => setShowModal(false)}
                   >
                     Cancelar
                   </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded bg-[#003087] text-white font-semibold hover:bg-[#002060]"
-                  >
+                  <button type="submit" className="btn-primary">
                     Crear
                   </button>
                 </div>
@@ -307,40 +378,45 @@ export default function CursosPage() {
           </div>
         )}
 
-        {/* Modal para editar curso */}
+        {/* MODAL EDITAR CURSO */}
         {showEditModal && cursoEnEdicion && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-              <h3 className="text-xl font-bold mb-4 text-[#003087]">Editar curso</h3>
-              <form onSubmit={handleGuardarEdicionCurso} className="space-y-4">
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md border border-[var(--color-border)]">
+              <h3 className="text-xl font-semibold mb-4 text-[var(--color-primary)]">
+                Editar curso
+              </h3>
+              <form
+                onSubmit={handleGuardarEdicionCurso}
+                className="space-y-4"
+              >
                 <div>
-                  <label className="block font-semibold mb-1">Nombre</label>
+                  <label className="block font-medium mb-1">Nombre</label>
                   <input
                     type="text"
                     name="nombre"
                     value={cursoEnEdicion.nombre}
                     onChange={handleEditInputChange}
-                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Descripción</label>
+                  <label className="block font-medium mb-1">Descripción</label>
                   <input
                     type="text"
                     name="descripcion"
                     value={cursoEnEdicion.descripcion}
                     onChange={handleEditInputChange}
-                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Docente</label>
+                  <label className="block font-medium mb-1">Docente</label>
                   <select
                     name="docente"
                     value={cursoEnEdicion.docente}
                     onChange={handleEditInputChange}
-                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     required
                   >
                     <option value="">Selecciona un docente</option>
@@ -352,7 +428,9 @@ export default function CursosPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Umbral Nota (%)</label>
+                  <label className="block font-medium mb-1">
+                    Umbral Nota (%)
+                  </label>
                   <input
                     type="number"
                     name="umbral_nota"
@@ -360,14 +438,14 @@ export default function CursosPage() {
                     min={0}
                     max={100}
                     onChange={handleEditInputChange}
-                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     required
                   />
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                   <button
                     type="button"
-                    className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
+                    className="btn-ghost"
                     onClick={() => {
                       setCursoEnEdicion(null);
                       setShowEditModal(false);
@@ -375,10 +453,7 @@ export default function CursosPage() {
                   >
                     Cancelar
                   </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded bg-[#003087] text-white font-semibold hover:bg-[#002060]"
-                  >
+                  <button type="submit" className="btn-primary">
                     Guardar
                   </button>
                 </div>

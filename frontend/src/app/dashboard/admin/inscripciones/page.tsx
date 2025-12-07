@@ -28,18 +28,24 @@ export default function InscripcionesPage() {
     if (token) {
       // Carga el usuario real para ProtectedRoute
       getUsuarioActual(token)
-        .then(userData => setUser(userData))
+        .then((userData) => setUser(userData))
         .catch(() => setUser(null))
         .finally(() => setLoading(false));
 
       getUsuarios(token)
-        .then(data => {
+        .then((data) => {
           setUsuarios(data);
-          setEstudiantesDisponibles(data.filter((u: any) => (u.rol || "").toLowerCase().trim() === "estudiante"));
+          setEstudiantesDisponibles(
+            data.filter(
+              (u: any) =>
+                (u.rol || "").toLowerCase().trim() === "estudiante"
+            )
+          );
         })
         .catch(() => {});
+
       getCursos(token)
-        .then(data => setCursos(data))
+        .then((data) => setCursos(data))
         .catch(() => {});
     } else {
       setLoading(false);
@@ -64,7 +70,9 @@ export default function InscripcionesPage() {
         setTipoMensaje("");
       }, 3000);
     } catch (error: any) {
-      setMensajeInscripcion(error.message || "Error al inscribir estudiante");
+      setMensajeInscripcion(
+        error.message || "Error al inscribir estudiante"
+      );
       setTipoMensaje("error");
     }
   };
@@ -73,9 +81,11 @@ export default function InscripcionesPage() {
     e.preventDefault();
     const file = fileInputRef.current?.files?.[0];
     if (!file) return;
+
     const formData = new FormData();
     formData.append("file", file);
     const token = localStorage.getItem("token");
+
     try {
       const res = await axios.post(
         "http://localhost:8000/api/inscripciones/cargar_csv/",
@@ -83,8 +93,8 @@ export default function InscripcionesPage() {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data"
-          }
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
       setCsvResult(res.data);
@@ -94,43 +104,69 @@ export default function InscripcionesPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="text-xl font-semibold">Cargando...</div>
-    </div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg)]">
+        <div className="text-lg md:text-xl font-semibold text-[var(--color-text)]">
+          Cargando...
+        </div>
+      </div>
+    );
   }
 
   return (
     <ProtectedRoute allowedRoles={["admin", "administrador"]} user={user}>
-      <div className="p-8 w-full max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-[#003087] mb-6">Inscripción de Estudiantes</h1>
+      <div className="w-full h-full px-4 md:px-8 py-6 md:py-8 max-w-5xl mx-auto space-y-8">
+        {/* HEADER */}
+        <header className="space-y-1">
+          <h1 className="title mb-1">Inscripción de Estudiantes</h1>
+          <p className="text-sm text-[var(--color-text-light)]">
+            Administra inscripciones individuales y masivas de estudiantes en los
+            cursos activos de la plataforma.
+          </p>
+        </header>
 
-        {/* Inscripción individual */}
-        <section className="mb-10">
-          <div className="bg-white border border-[#D3D3D3] rounded shadow p-6">
-            <form onSubmit={handleInscribirEstudiante} className="space-y-4">
+        {/* INSCRIPCIÓN INDIVIDUAL */}
+        <section className="space-y-4">
+          <h2 className="text-base font-semibold text-[var(--color-text)]">
+            Inscripción individual
+          </h2>
+
+          <div className="card p-6 md:p-7">
+            <form
+              onSubmit={handleInscribirEstudiante}
+              className="space-y-5"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold mb-1">Estudiante</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Estudiante
+                  </label>
                   <select
                     value={estudianteSeleccionado}
-                    onChange={(e) => setEstudianteSeleccionado(e.target.value)}
-                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                    onChange={(e) =>
+                      setEstudianteSeleccionado(e.target.value)
+                    }
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     required
                   >
                     <option value="">Selecciona un estudiante</option>
                     {estudiantesDisponibles.map((e) => (
                       <option key={e.id} value={e.id}>
-                        {e.first_name || e.nombre} {e.last_name || ""} ({e.email})
+                        {e.first_name || e.nombre} {e.last_name || ""} (
+                        {e.email})
                       </option>
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="block font-semibold mb-1">Curso</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Curso
+                  </label>
                   <select
                     value={cursoSeleccionado}
                     onChange={(e) => setCursoSeleccionado(e.target.value)}
-                    className="w-full border border-[#D3D3D3] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     required
                   >
                     <option value="">Selecciona un curso</option>
@@ -142,18 +178,21 @@ export default function InscripcionesPage() {
                   </select>
                 </div>
               </div>
-              <div>
-                <button
-                  type="submit"
-                  className="bg-[#003087] text-white px-4 py-2 rounded font-semibold hover:bg-[#002060] transition"
-                >
-                  Inscribir Estudiante
+
+              <div className="flex justify-end">
+                <button type="submit" className="btn-primary">
+                  Inscribir estudiante
                 </button>
               </div>
+
               {mensajeInscripcion && (
-                <div className={`mt-2 text-sm ${
-                  tipoMensaje === "success" ? "text-green-600" : "text-red-600"
-                }`}>
+                <div
+                  className={`text-sm mt-1 ${
+                    tipoMensaje === "success"
+                      ? "text-green-700"
+                      : "text-red-600"
+                  }`}
+                >
                   {mensajeInscripcion}
                 </div>
               )}
@@ -161,73 +200,7 @@ export default function InscripcionesPage() {
           </div>
         </section>
 
-        {/* Inscripción masiva por CSV */}
-        <section className="mb-10">
-          <div className="bg-white border border-[#D3D3D3] rounded shadow p-6">
-            <form onSubmit={handleCsvUpload} className="space-y-4">
-              <div>
-                <label className="block font-semibold mb-2">
-                  Sube un archivo CSV con formato: email,curso_id
-                </label>
-                <div className="flex flex-col md:flex-row gap-4 items-start">
-                  <input
-                    type="file"
-                    accept=".csv"
-                    ref={fileInputRef}
-                    className="border border-[#D3D3D3] rounded px-3 py-2 w-full md:w-auto"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    className="bg-[#003087] text-white px-4 py-2 rounded font-semibold hover:bg-[#002060] transition"
-                  >
-                    Subir y Procesar CSV
-                  </button>
-                </div>
-              </div>
-              {csvResult.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="font-bold mb-2">Resultados de la inscripción masiva:</h3>
-                  <div className="max-h-60 overflow-y-auto border border-[#D3D3D3] rounded">
-                    <table className="min-w-full bg-white">
-                      <thead>
-                        <tr className="bg-[#F4F8FB] text-[#003087]">
-                          <th className="py-2 px-4 border-b text-left">Email</th>
-                          <th className="py-2 px-4 border-b text-left">Curso</th>
-                          <th className="py-2 px-4 border-b text-left">Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {csvResult.map((r, i) => (
-                          <tr key={i} className="hover:bg-[#F4F8FB]">
-                            <td className="py-2 px-4 border-b">{r.email || "—"}</td>
-                            <td className="py-2 px-4 border-b">{r.curso_id || "—"}</td>
-                            <td className={`py-2 px-4 border-b ${
-                              r.status === "inscrito"
-                                ? "text-green-600"
-                                : r.status === "ya inscrito"
-                                ? "text-blue-600"
-                                : "text-red-600"
-                            }`}>
-                              {r.status}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="mt-3 text-sm text-gray-600">
-                    <p>
-                      Total: {csvResult.length} registros procesados |  
-                      Exitosos: {csvResult.filter(r => r.status === "inscrito" || r.status === "ya inscrito").length} |
-                      Con error: {csvResult.filter(r => r.status !== "inscrito" && r.status !== "ya inscrito").length}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </form>
-          </div>
-        </section>
+
       </div>
     </ProtectedRoute>
   );

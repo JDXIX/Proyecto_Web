@@ -96,7 +96,7 @@ export default function ReportesDocentePage({ params }: { params: { cursoId: str
           Reporte General del Curso
         </h1>
         <p className="mb-6 text-gray-700">
-          Visualiza el rendimiento, atención y progreso de todos los estudiantes. Exporta los datos para auditoría y mejora continua conforme a la <b>norma ISO 21001:2018</b>.
+          Visualiza el monitoreo y progreso de todos los estudiantes. Exporta los datos para analisis externo.
         </p>
         <div className="flex flex-wrap gap-4 mb-6">
           <Link
@@ -125,11 +125,8 @@ export default function ReportesDocentePage({ params }: { params: { cursoId: str
                   <th className="py-2 px-4 text-left">Email</th>
                   <th className="py-2 px-4 text-left">Nivel</th>
                   <th className="py-2 px-4 text-left">Lección</th>
-                  <th className="py-2 px-4 text-left">Actividad</th>
+                  <th className="py-2 px-4 text-left">Recurso</th>
                   <th className="py-2 px-4 text-center">Atención</th>
-                  <th className="py-2 px-4 text-center">Nota</th>
-                  <th className="py-2 px-4 text-center">Nota combinada</th>
-                  <th className="py-2 px-4 text-center">Estado</th>
                   <th className="py-2 px-4 text-center">Fecha</th>
                 </tr>
               </thead>

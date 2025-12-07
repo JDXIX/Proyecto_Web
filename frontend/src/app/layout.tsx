@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "JM Vision",
+  title: "",
   description: "Sistema de monitoreo de atención para educación superior",
 };
 

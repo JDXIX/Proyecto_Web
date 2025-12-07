@@ -1,208 +1,209 @@
-from rest_framework import viewsets, status, permissions
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action, api_view, permission_classes
-from .models import SesionMonitoreo, AtencionVisual, NotaAcademica
-from .serializers import SesionMonitoreoSerializer, AtencionVisualSerializer, NotaAcademicaSerializer
 from django.utils import timezone
+from django.db.models import Avg
 
-# Importa el script actualizado
-from atencion.scripts.deteccion_facial import monitorear_atencion_durante_tiempo
+from rest_framework import viewsets, status
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
-from cursos.models import Recurso, Fase, Curso, Inscripcion
+from .models import SesionMonitoreo, AtencionVisual, NotaAcademica
+from .serializers import (
+    SesionMonitoreoSerializer,
+    AtencionVisualSerializer,
+    NotaAcademicaSerializer,
+)
+
+from cursos.models import Recurso, Fase, Nivel, Curso, Inscripcion
 from usuarios.models import Usuario
 
+# Procesamiento y modelo ML
+from atencion.scripts.procesamiento_mediapipe import procesar_frame
+from atencion.scripts.modelo_atencion_rf import predecir_atencion
+
+
 class SesionMonitoreoViewSet(viewsets.ModelViewSet):
+    """
+    CRUD de sesiones de monitoreo + endpoints de IA.
+    """
     queryset = SesionMonitoreo.objects.all()
     serializer_class = SesionMonitoreoSerializer
     permission_classes = [IsAuthenticated]
 
-    # MODIFICADO: Solo devuelve sesiones del estudiante autenticado para el recurso
-    def get_queryset(self):
-        qs = super().get_queryset()
-        user = self.request.user
-        recurso = self.request.query_params.get("recurso")
-        # Si el usuario es estudiante, filtra por él
-        if hasattr(user, "rol") and user.rol == "estudiante":
-            qs = qs.filter(estudiante=user)
-        if recurso:
-            qs = qs.filter(recurso_id=recurso)
-        return qs
+    # =====================================================
+    # A) CREAR SESIONES PARA TODOS LOS ESTUDIANTES DEL CURSO
+    #    URL: POST /api/sesiones/crear-multiples/
+    # =====================================================
+    @action(detail=False, methods=["post"], url_path="crear-multiples")
+    def crear_multiples(self, request):
+        """
+        Crea una SesionMonitoreo por cada estudiante inscrito
+        en el curso del recurso indicado.
 
-    @action(detail=True, methods=['post'], url_path='monitoreo-atencion')
+        Body esperado (variantes toleradas):
+        {
+            "curso": "<uuid-curso>",
+            "fase": "<uuid-fase>",
+            "recurso": "<uuid-recurso>"
+        }
+        """
+        data = request.data
+
+        # 1) Resolver ID del recurso
+        recurso_raw = (
+            data.get("recurso")
+            or data.get("recurso_id")
+            or data.get("recursoId")
+            or data.get("id")
+        )
+
+        if isinstance(recurso_raw, dict):
+            recurso_id = (
+                recurso_raw.get("id")
+                or recurso_raw.get("uuid")
+                or recurso_raw.get("pk")
+            )
+        else:
+            recurso_id = recurso_raw
+
+        if not recurso_id:
+            return Response(
+                {"detail": "No se pudo determinar el recurso para crear sesiones."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 2) Obtener recurso → fase → nivel → curso
+        try:
+            recurso = Recurso.objects.select_related(
+                "fase", "fase__nivel", "fase__nivel__curso"
+            ).get(pk=recurso_id)
+        except Recurso.DoesNotExist:
+            return Response(
+                {"detail": "El recurso indicado no existe."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        fase: Fase = recurso.fase
+        nivel: Nivel = fase.nivel
+        curso: Curso = nivel.curso
+
+        # 3) Inscripciones del curso
+        inscripciones = Inscripcion.objects.select_related("estudiante").filter(
+            curso=curso
+        )
+
+        if not inscripciones.exists():
+            return Response(
+                {
+                    "detail": "No se encontraron estudiantes inscritos en el curso.",
+                    "sesiones_creadas": 0,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # 4) Crear (o reutilizar) una sesión por estudiante
+        sesiones = []
+        for insc in inscripciones:
+            usuario_est: Usuario = insc.estudiante  # Usuario con rol 'estudiante'
+
+            sesion, created = SesionMonitoreo.objects.get_or_create(
+                estudiante=usuario_est,
+                recurso=recurso,
+                fase=fase,
+            )
+            sesiones.append(sesion)
+
+        serializer = self.get_serializer(sesiones, many=True)
+        return Response(
+            {
+                "sesiones": serializer.data,
+                "sesiones_creadas": len(sesiones),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    # =====================================================
+    # B) MONITOREO FRAME A FRAME
+    #    URL: POST /api/sesiones/<id>/monitoreo-atencion/
+    # =====================================================
+    @action(detail=True, methods=["post"], url_path="monitoreo-atencion")
     def monitoreo_atencion(self, request, pk=None):
         """
-        Ejecuta el monitoreo visual y calcula el score de atención con la fórmula:
-          score = 100 - (0.4*desviacion + 0.3*cierre_ojos + 0.2*cabeza_fuera + 0.1*(100 - presencia))
+        Maneja 2 modos:
 
-        Donde todas las métricas están en el rango 0-100. El score se limita a [0, 100].
-        Se guarda el score y los patrones tanto en AtencionVisual como en la SesionMonitoreo.
-        También clasifica por umbrales: Alto (>=80), Medio (50-79), Bajo (<50).
+        1) INICIAR MONITOREO
+           Body:
+               { "duracion": 20 }
+
+        2) FRAME A FRAME
+           Body:
+               { "frame": "data:image/jpeg;base64,..." }
         """
-        sesion_id = pk or request.data.get('sesion_id')
-        duracion = request.data.get('duracion')  # opcional, en segundos
+        sesion = self.get_object()
 
-        if not sesion_id:
-            return Response({"error": "sesion_id es requerido"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            sesion = SesionMonitoreo.objects.get(id=sesion_id)
-
-            # Determina la duración a usar
-            if duracion is not None:
-                try:
-                    segundos = int(duracion)
-                except Exception:
-                    segundos = 30
-            elif sesion.recurso and getattr(sesion.recurso, "duracion", None):
-                segundos = sesion.recurso.duracion
-            else:
-                segundos = 30
-
-            # Ejecuta el monitoreo visual con la duración correcta
-            resultados = monitorear_atencion_durante_tiempo(
-                segundos=segundos,
-                mostrar_ventana=False
-            )
-
-            # Extrae patrones con valores por defecto (0-100)
-            promedio_desviacion = float(resultados.get("promedio_desviacion", 0.0) or 0.0)           # 0..100
-            porcentaje_cierre_ojos = float(resultados.get("porcentaje_cierre_ojos", 0.0) or 0.0)     # 0..100
-            porcentaje_cabeza_fuera = float(resultados.get("porcentaje_cabeza_fuera", 0.0) or 0.0)   # 0..100
-            porcentaje_presencia = float(resultados.get("porcentaje_presencia", 100.0) or 0.0)       # 0..100
-
-            # Ponderaciones
-            pesos = {
-                "desviacion": 0.40,
-                "cierre_ojos": 0.30,
-                "cabeza_fuera": 0.20,
-                "presencia": 0.10,  # se penaliza (100 - presencia)
-            }
-
-            # Cálculo del score (limitado a [0, 100])
-            score_atencion = 100 - (
-                pesos["desviacion"] * promedio_desviacion +
-                pesos["cierre_ojos"] * porcentaje_cierre_ojos +
-                pesos["cabeza_fuera"] * porcentaje_cabeza_fuera +
-                pesos["presencia"] * (100 - porcentaje_presencia)
-            )
-            score_atencion = max(0.0, min(100.0, round(score_atencion, 2)))
-
-            # Clasificación por umbrales
-            # Alto (≥80), Medio (50–79), Bajo (<50)
-            if score_atencion >= 80:
-                nivel_atencion = "ALTO"
-            elif score_atencion >= 50:
-                nivel_atencion = "MEDIO"
-            else:
-                nivel_atencion = "BAJO"
-
-            # Estructura de patrones detallados para persistir
-            patrones = {
-                "promedio_desviacion": promedio_desviacion,
-                "porcentaje_cierre_ojos": porcentaje_cierre_ojos,
-                "porcentaje_cabeza_fuera": porcentaje_cabeza_fuera,
-                "porcentaje_presencia": porcentaje_presencia,
-                "total_frames": resultados.get("total_frames", 0),
-                "frames_con_rostro": resultados.get("frames_con_rostro", 0),
-                "frames_ausente": resultados.get("frames_ausente", 0),
-                "inclinacion_promedio": float(
-                    sum(
-                        [f.get("inclinacion", 0.0) for f in resultados.get("detalle_frames", []) if f.get("inclinacion") is not None]
-                    ) / max(1, len([f for f in resultados.get("detalle_frames", []) if f.get("inclinacion") is not None]))
-                ) if resultados.get("detalle_frames") else 0.0,
-                "pesos_utilizados": pesos,
-                "umbrales": {"ALTO": ">=80", "MEDIO": "50-79", "BAJO": "<50"},
-                "nivel_atencion": nivel_atencion,
-                "duracion_segundos": segundos,
-            }
-
-            # Guardar en la base de datos
-            AtencionVisual.objects.create(
-                sesion=sesion,
-                estudiante=sesion.estudiante,
-                recurso=sesion.recurso,
-                fase=sesion.fase,
-                score_atencion=score_atencion,
-                patrones=patrones
-            )
-
-            sesion.fin = timezone.now()
-            sesion.duracion = sesion.fin - sesion.inicio
-            sesion.score_atencion = score_atencion
-            sesion.patrones = patrones
+        # ---- MODO A: iniciar monitoreo ----
+        duracion = request.data.get("duracion")
+        if duracion is not None:
+            sesion.inicio = timezone.now()
+            sesion.fin = timezone.now() + timezone.timedelta(seconds=int(duracion))
             sesion.save()
 
             return Response(
                 {
-                    "status": "monitoreo terminado",
-                    "score_atencion": score_atencion,
-                    "nivel_atencion": nivel_atencion,
-                    "patrones": patrones,
+                    "sesion": SesionMonitoreoSerializer(sesion).data,
+                    "mensaje": "Monitoreo iniciado.",
                 },
-                status=status.HTTP_200_OK
+                status=status.HTTP_200_OK,
             )
 
-        except SesionMonitoreo.DoesNotExist:
-            return Response({"error": "Sesión no encontrada"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # ---- MODO B: recibir frame ----
+        frame_b64 = request.data.get("frame")
+        if not frame_b64:
+            return Response(
+                {"error": "No se recibió 'frame' en la solicitud."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-# NUEVO: Endpoint para crear sesiones de monitoreo masivas
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def crear_sesiones_monitoreo(request):
-    recurso_id = request.data.get('recurso')
-    fase_id = request.data.get('fase')
-    if not recurso_id or not fase_id:
-        return Response({'error': 'Faltan datos'}, status=400)
-    try:
-        recurso = Recurso.objects.get(id=recurso_id)
-        fase = Fase.objects.get(id=fase_id)
-        curso = fase.nivel.curso
-        estudiantes = Usuario.objects.filter(
-            inscripciones__curso=curso,
-            rol='estudiante'
-        ).distinct()
-        creadas = 0
-        for estudiante in estudiantes:
-            if not SesionMonitoreo.objects.filter(estudiante=estudiante, recurso=recurso, fase=fase).exists():
-                SesionMonitoreo.objects.create(
-                    estudiante=estudiante,
-                    recurso=recurso,
-                    fase=fase
-                )
-                creadas += 1
-        return Response({'ok': True, 'creadas': creadas})
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
+        resultado = procesar_frame(frame_b64)
 
-# NUEVO: Crear (o devolver) una sesión de monitoreo para el estudiante autenticado y un recurso
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def crear_sesion_para_mi(request):
-    """
-    Crea (o retorna) una SesionMonitoreo para el estudiante autenticado y el recurso dado.
-    body: { recurso: uuid }
-    """
-    try:
-        user = request.user
-        if not hasattr(user, "rol") or user.rol != "estudiante":
-            return Response({"error": "Solo estudiantes"}, status=403)
-        recurso_id = request.data.get('recurso')
-        if not recurso_id:
-            return Response({"error": "Falta recurso"}, status=400)
-        recurso = Recurso.objects.get(id=recurso_id)
-        sesion, _ = SesionMonitoreo.objects.get_or_create(
-            estudiante=user,
-            recurso=recurso,
-            fase=recurso.fase
+        if resultado is None:
+            return Response(
+                {"error": "No se detectó rostro."},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        ear = resultado["ear"]
+        mar = resultado["mar"]
+        yaw = resultado["yaw"]
+        pitch = resultado["pitch"]
+        roll = resultado["roll"]
+
+        pred = predecir_atencion(ear, mar, yaw, pitch, roll)
+
+        AtencionVisual.objects.create(
+            sesion=sesion,
+            estudiante=sesion.estudiante,
+            recurso=sesion.recurso,
+            fase=sesion.fase,
+            ear=ear,
+            mar=mar,
+            yaw=yaw,
+            pitch=pitch,
+            roll=roll,
+            nivel_atencion=pred["nivel_atencion"],
+            score_atencion=pred.get("score"),
+            timestamp=timezone.now(),
         )
-        return Response({"id": str(sesion.id)}, status=200)
-    except Recurso.DoesNotExist:
-        return Response({"error": "Recurso no encontrado"}, status=404)
-    except Exception as e:
-        return Response({"error": str(e)}, status=500)
+
+        return Response(
+            {
+                "sesion": sesion.id,
+                "metricas": resultado,
+                "score_atencion": pred.get("score"),
+                "estado_atencion": pred["nivel_atencion"],
+            },
+            status=status.HTTP_200_OK,
+        )
+
 
 class AtencionVisualViewSet(viewsets.ModelViewSet):
     queryset = AtencionVisual.objects.all()
@@ -213,40 +214,117 @@ class AtencionVisualViewSet(viewsets.ModelViewSet):
 class NotaAcademicaViewSet(viewsets.ModelViewSet):
     queryset = NotaAcademica.objects.all()
     serializer_class = NotaAcademicaSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        estudiante = self.request.query_params.get('estudiante')
-        recurso = self.request.query_params.get('recurso')
-        if estudiante:
-            qs = qs.filter(estudiante_id=estudiante)
-        if recurso:
-            qs = qs.filter(recurso_id=recurso)
-        return qs
 
-@api_view(['GET'])
+# =====================================================
+#   ENDPOINTS EXTRA (nota combinada + sesión para mí)
+# =====================================================
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def crear_sesion_para_mi(request):
+    """
+    Crea una sesión SOLO para el estudiante logueado y el recurso indicado.
+    (por si el frontend usa /sesiones/crear-para-mi/)
+    """
+    recurso_id = (
+        request.data.get("recurso")
+        or request.data.get("recurso_id")
+        or request.data.get("id")
+    )
+
+    if isinstance(recurso_id, dict):
+        recurso_id = (
+            recurso_id.get("id") or recurso_id.get("uuid") or recurso_id.get("pk")
+        )
+
+    if not recurso_id:
+        return Response(
+            {"detail": "Debe indicar el recurso."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        recurso = Recurso.objects.select_related(
+            "fase", "fase__nivel", "fase__nivel__curso"
+        ).get(pk=recurso_id)
+    except Recurso.DoesNotExist:
+        return Response(
+            {"detail": "El recurso indicado no existe."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    fase = recurso.fase
+    estudiante: Usuario = request.user
+
+    sesion, created = SesionMonitoreo.objects.get_or_create(
+        estudiante=estudiante,
+        recurso=recurso,
+        fase=fase,
+    )
+
+    serializer = SesionMonitoreoSerializer(sesion)
+    return Response(
+        serializer.data,
+        status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+    )
+
+
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def obtener_nota_combinada(request):
-    estudiante_id = request.query_params.get('estudiante')
-    recurso_id = request.query_params.get('recurso')
+    """
+    Devuelve una nota combinada (nota académica + atención).
+    Endpoint: GET /api/nota-combinada/?estudiante=<id>&recurso=<id>
+    """
+    estudiante_id = request.query_params.get("estudiante")
+    recurso_id = request.query_params.get("recurso")
+
     if not estudiante_id or not recurso_id:
-        return Response({'error': 'Faltan parámetros'}, status=400)
+        return Response(
+            {"detail": "Se requieren 'estudiante' y 'recurso' como parámetros."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     try:
-        from .models import AtencionVisual, NotaAcademica
-        atencion = AtencionVisual.objects.filter(
-            estudiante_id=estudiante_id, recurso_id=recurso_id
-        ).order_by('-id').first()
-        nota = NotaAcademica.objects.filter(
-            estudiante_id=estudiante_id, recurso_id=recurso_id
-        ).order_by('-id').first()
-        score_atencion = atencion.score_atencion if atencion else 0
-        nota_academica = nota.nota if nota else 0
-        nota_combinada = round(0.4 * score_atencion + 0.6 * nota_academica, 2)
-        return Response({
-            'score_atencion': score_atencion,
-            'nota_academica': nota_academica,
-            'nota_combinada': nota_combinada
-        })
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
+        estudiante = Usuario.objects.get(pk=estudiante_id)
+    except Usuario.DoesNotExist:
+        return Response(
+            {"detail": "El estudiante indicado no existe."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        recurso = Recurso.objects.get(pk=recurso_id)
+    except Recurso.DoesNotExist:
+        return Response(
+            {"detail": "El recurso indicado no existe."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    nota_obj = NotaAcademica.objects.filter(
+        estudiante=estudiante, recurso=recurso
+    ).first()
+    nota_academica = nota_obj.nota if nota_obj else None
+
+    score_atencion = (
+        SesionMonitoreo.objects.filter(
+            estudiante=estudiante, recurso=recurso
+        ).aggregate(Avg("score_atencion"))["score_atencion__avg"]
+    )
+
+    nota_combinada = None
+    if nota_academica is not None and score_atencion is not None:
+        nota_combinada = 0.6 * nota_academica + 0.4 * score_atencion
+
+    return Response(
+        {
+            "estudiante": estudiante.id,
+            "recurso": recurso.id,
+            "nota_academica": nota_academica,
+            "score_atencion": score_atencion,
+            "nota_combinada": nota_combinada,
+        },
+        status=status.HTTP_200_OK,
+    )

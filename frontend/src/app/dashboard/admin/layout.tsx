@@ -7,17 +7,29 @@ import AdminSidebar from "@/components/AdminSidebar";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col bg-[#F4F8FB] w-full">
+    <div className="min-h-screen flex flex-col bg-[var(--color-bg)] w-full">
+
+      {/* NAVBAR */}
       <Navbar />
-      <div className="flex flex-1 w-full max-w-screen-2xl mx-auto pt-4 pb-4 px-2">
-        {/* Sidebar con ancho fijo */}
-        <div className="w-64 flex-shrink-0">
+
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="flex flex-1 w-full max-w-screen-2xl mx-auto px-4 py-6 gap-6">
+
+        {/* SIDEBAR */}
+        <aside className="w-64 flex-shrink-0">
           <AdminSidebar />
-        </div>
-        {/* Contenido principal ocupa el resto */}
-        <main className="flex-1 min-h-[calc(100vh-80px)]">{children}</main>
+        </aside>
+
+        {/* CONTENIDO */}
+        <main className="flex-1 rounded-xl bg-white shadow-sm border border-[var(--color-border)] p-6">
+          {children}
+        </main>
+
       </div>
+
+      {/* FOOTER */}
       <Footer />
+
     </div>
   );
 }

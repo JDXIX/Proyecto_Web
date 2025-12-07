@@ -94,7 +94,7 @@ export default function RecomendacionesDocentePage({ params }: { params: { curso
           Historial de Recomendaciones IA
         </h1>
         <p className="mb-6 text-gray-700">
-          Visualiza todas las recomendaciones generadas, aprobadas o descartadas, con trazabilidad y transparencia conforme a la <b>norma ISO 21001:2018</b>.
+          Visualiza todas las recomendaciones.
         </p>
         <Link
           href={`/dashboard/docente/${cursoId}`}

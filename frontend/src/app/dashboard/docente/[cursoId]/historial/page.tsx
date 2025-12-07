@@ -98,10 +98,10 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
     <div className="min-h-screen bg-[#F5F8FA] py-8 px-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-8">
         <h1 className="text-3xl font-bold text-[#003087] mb-6">
-          Historial General de Recomendaciones IA
+          Historial General de Monitoreo
         </h1>
         <p className="mb-6 text-gray-700">
-          Consulta el historial de recomendaciones IA y monitoreo de todos los estudiantes del curso, asegurando trazabilidad y mejora continua conforme a la <b>norma ISO 21001:2018</b>.
+          Consulta el historial de monitoreo de todos los estudiantes del curso.
         </p>
         <Link
           href={`/dashboard/docente/${cursoId}`}
@@ -121,11 +121,8 @@ export default function HistorialGeneralDocentePage({ params }: { params: { curs
                   <th className="py-2 px-4 text-left">Estudiante</th>
                   <th className="py-2 px-4 text-left">Nivel</th>
                   <th className="py-2 px-4 text-left">Lección</th>
-                  <th className="py-2 px-4 text-left">Actividad</th>
+                  <th className="py-2 px-4 text-left">Recurso</th>
                   <th className="py-2 px-4 text-center">Atención</th>
-                  <th className="py-2 px-4 text-center">Nota</th>
-                  <th className="py-2 px-4 text-left">Recomendación IA</th>
-                  <th className="py-2 px-4 text-center">Estado</th>
                   <th className="py-2 px-4 text-center">Fecha</th>
                 </tr>
               </thead>

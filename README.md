@@ -1,265 +1,377 @@
-# Sistema Educativo Web
+# 🚀 **AttentionTrack — Sistema Educativo Inteligente con Monitoreo de Atención**
 
-Sistema integral de gestión educativa con panel de administración, gestión de usuarios, cursos e inscripciones, con módulos de monitoreo de atención y recomendaciones asistidas por IA. Backend en Django REST Framework y frontend en Next.js 15 + Bun + Tailwind CSS.
+**AttentionTrack** es un sistema educativo web completo que integra gestión académica, monitoreo de atención basado en visión por computadora (EAR, MAR, Head Pose) y un modelo de **Random Forest** para clasificar niveles de atención en tiempo real, todo completamente integrado en un entorno web moderno.
 
----
-
-## 🚀 Características principales
-
-- Autenticación con JWT y control de acceso por roles (admin, docente, estudiante).
-- Gestión de usuarios: crear, editar (rol/estado/contraseña), eliminar y listar.
-- Gestión académica: cursos, fases, lecciones y recursos.
-- Inscripción de estudiantes: individual y masiva (CSV).
-- Módulo de atención (opcional): monitoreo con cámara (OpenCV + MediaPipe).
-- Recomendaciones IA (opcional): sugerencias personalizadas por estudiante/curso.
-- UI moderna y responsive con App Router (Next.js) y Tailwind.
-- APIs REST modulares por app (usuarios, cursos, atención, recomendaciones).
+Este sistema fue reconstruido, optimizado y extendido a partir del repositorio original, ahora con un pipeline de atención **100% web**, sin procesamiento local.
 
 ---
 
-## 🧭 Arquitectura
+## ✨ **Características principales**
 
-- Backend: Django REST Framework (DRF), apps:
-  - usuarios, cursos, atencion, recomendaciones
-- Frontend: Next.js 15 (App Router) + Tailwind CSS + Bun
-- Persistencia: SQLite (dev) o PostgreSQL (prod)
-- Comunicación: HTTP/JSON (axios/fetch desde frontend)
-- Almacenamiento de medios: carpeta media/ (recursos de cursos)
+### 🎓 Gestión Académica Completa
+
+- CRUD de usuarios con roles: administrador, docente y estudiante
+- Gestión de cursos, niveles, fases y recursos
+- Inscripciones individuales
+- Panel administrativo en Django Admin
+
+### 👁️ **Módulo de Atención (Actualizado – Atención Web con ML)**
+
+- Procesamiento de cámara desde el navegador (getUserMedia)
+- Pipeline de métricas:
+  - **EAR (Eye Aspect Ratio)**
+  - **MAR (Mouth Aspect Ratio)**
+  - **Head Pose (Yaw, Pitch, Roll)**
+- Modelo de Machine Learning:
+  - **Random Forest entrenado en dataset propio**
+- Captura y almacenamiento de métricas por frame
+- Clasificación de nivel de atención por segundo
+- Dashboard docente (pendiente de UI final)
+
+### 🖥️ Frontend Moderno
+
+- Next.js 15 (App Router)
+- Tailwind CSS
+- Bun como runtime
+- Integración directa con el backend vía axios / fetch
+
+### ⚙️ Backend Robusto
+
+- Django REST Framework
+- Scripts dedicados:
+  - procesamiento_mediapipe.py
+  - modelo_atencion_rf.py (Random Forest)
+- Sesiones automáticas de monitoreo por curso y recurso
+- API modular por aplicaciones
 
 ---
 
-## 📁 Estructura del proyecto
+## 🧭 **Arquitectura General**
 
 ```
 Proyecto_Web/
 │
 ├─ sistema_educativo/                # Backend Django
-│  ├─ usuarios/                      # Usuarios y autenticación
-│  ├─ cursos/                        # Cursos, fases, lecciones, recursos
-│  ├─ atencion/                      # Monitoreo de atención (OpenCV/MediaPipe)
-│  ├─ recomendaciones/               # Recomendaciones IA (Claude/Anthropic)
-│  ├─ media/                         # Archivos subidos (recursos multimedia)
-│  └─ sistema_educativo/             # Configuración principal de Django
+│  ├─ usuarios/                      # Autenticación, perfiles y roles
+│  ├─ cursos/                        # Cursos, niveles, fases y recursos
+│  ├─ atencion/                      # Monitoreo con MediaPipe + RF
+│  │   ├─ scripts/
+│  │   │   ├─ procesamiento_mediapipe.py
+│  │   │   ├─ modelo_atencion_rf.py
+│  │   │   ├─ entrenar_modelo.py
+│  │   │   └─ datasets (opcional)
+│  ├─ recomendaciones/
+│  ├─ media/                         # Recursos subidos por docentes
+│  └─ sistema_educativo/             # Configuración Django
 │
-├─ frontend/                         # Frontend Next.js + Tailwind
-│  ├─ src/
-│  │  ├─ app/                        # Páginas y rutas (App Router)
-│  │  ├─ components/                 # Componentes compartidos
-│  │  ├─ services/                   # Servicios de API (axios/fetch)
-│  │  └─ styles/                     # Estilos globales
-│  └─ public/                        # Recursos estáticos
+├─ frontend/                         # Next.js 15 + Tailwind + Bun
+│  ├─ src/app/
+│  ├─ src/services/
+│  └─ public/
 │
 └─ README.md
 ```
 
 ---
 
-## ⚙️ Requisitos
+## ⚙️ **Requisitos**
 
-- Python 3.10+ y pip
-- Node.js 20+ y Bun (https://bun.sh/) — opcionalmente npm/pnpm
+### Backend
+
+- Python 3.10+
+- pip
 - SQLite (dev) o PostgreSQL (prod)
-- Git (opcional)
+
+### Frontend
+
+- Node.js 20+
+- Bun (o npm/pnpm como alternativa)
 
 ---
 
-## 🔧 Variables de entorno
+## 🔧 **Variables de Entorno**
 
-Configura variables en archivos .env (backend) y .env.local (frontend).
+### Backend – `sistema_educativo/.env`
 
-Ejemplo para Django (crear archivo sistema_educativo/.env):
-```
+```env
 SECRET_KEY=change_me
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
-# CORS (ajusta el puerto del frontend)
+# CORS
 CORS_ALLOWED_ORIGINS=http://localhost:3000
 
-# Base de datos (usar DATABASE_URL en prod; por defecto SQLite en settings.py)
-# DATABASE_URL=postgres://user:pass@localhost:5432/mi_db
+# Modelo de IA opcional
+ANTHROPIC_API_KEY=
 
-# Recomendaciones IA (según recomendaciones/claude_api.py)
-ANTHROPIC_API_KEY=tu_api_key
-
-# (Opcional) JWT lifetimes si usas SimpleJWT (revisar settings.py para nombres)
-# ACCESS_TOKEN_LIFETIME=...
-# REFRESH_TOKEN_LIFETIME=...
+# Base de datos (prod)
+# DATABASE_URL=postgres://user:pass@host:5432/dbname
 ```
 
-Ejemplo para Next.js (crear archivo frontend/.env.local):
-```
+### Frontend – `frontend/.env.local`
+
+```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-Notas:
-- Mantén las claves fuera del control de versiones.
-- En producción define DEBUG=False, SECRET_KEY seguro, ALLOWED_HOSTS y CORS adecuados.
-
 ---
 
-## 🛠️ Instalación y ejecución (desarrollo)
+## 🛠️ Instalación y Ejecución (Modo Desarrollo)
 
-1) Clonar el repo
-```sh
+### 1) Clonar
+
+```bash
 git clone <URL-del-repo>
 cd Proyecto_Web
 ```
 
-2) Backend (Django)
-```sh
+### 2) Backend
+
+```bash
 cd sistema_educativo
 python -m venv venv
-# Windows:
 venv\Scripts\activate
-# Linux/Mac:
-# source venv/bin/activate
 
 pip install -r requirements.txt
-# Crea sistema_educativo/.env con las variables anteriores
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 ```
-Backend disponible en: http://localhost:8000
 
-3) Frontend (Next.js)
-```sh
+Backend disponible en:
+👉 `http://localhost:8000`
+
+En consola verás:
+- `Modelo Random Forest cargado correctamente.`
+- `Características esperadas: ['EAR', 'MAR', 'Yaw', 'Pitch', 'Roll']`
+
+### 3) Frontend
+
+```bash
 cd ../frontend
-# Crea frontend/.env.local con NEXT_PUBLIC_API_URL
-bun install          # o npm install / pnpm install
-bun run dev          # o npm run dev / pnpm dev
+bun install
+bun run dev
 ```
-Frontend disponible en: http://localhost:3000
+
+Frontend disponible en:
+👉 `http://localhost:3000`
+
+> Si en Windows `bun run dev` da problemas, usa `npm run dev` o `pnpm dev`.
 
 ---
 
-## 🔑 Acceso
+## 🔐 Accesos
 
-- Inicia sesión en /login con el superusuario creado.
-- Panel de administración: /dashboard/admin
-- Panel docente y estudiante disponibles según rol e inscripciones.
+- **Panel Admin Django**: [http://localhost:8000/admin](http://localhost:8000/admin)
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Login**: `/login`
+
+### Roles disponibles
+
+- **Admin**: gestión completa de usuarios, cursos e inscripciones
+- **Docente**: gestión de cursos, fases, lecciones, recursos y sesiones de monitoreo
+- **Estudiante**: acceso a cursos inscritos y participación en monitoreo de atención
 
 ---
 
 ## 🖥️ Funcionalidades por rol
 
-- Admin:
-  - CRUD de usuarios y cursos
-  - Inscripciones (individual y CSV con feedback)
-- Docente:
-  - Gestión de estructura del curso (fases, lecciones, recursos)
-  - Recursos con flags: permite_monitoreo, es_evaluable
-  - Creación masiva de sesiones de monitoreo
-  - Reportes y exportación CSV
-  - Historial de recomendaciones IA por curso
-- Estudiante:
-  - Acceso a cursos y recursos
-  - Visualización de recursos con consentimiento para monitoreo
-  - Sesiones de monitoreo asociadas a actividades
+### Admin
+
+- CRUD de usuarios (incluye cambio de rol y reset de contraseña)
+- Alta y edición de cursos
+- Configuración básica del sistema
+
+### Docente
+
+- Crear/editar:
+  - Cursos, fases, lecciones y recursos
+  - Flags por recurso: `permite_monitoreo`, `es_evaluable`
+- **Inscripciones**:
+  - Individual desde el panel
+  - Masiva mediante CSV (con feedback de errores)
+- **Sesiones de monitoreo**:
+  - Crear sesiones en lote para todos los estudiantes: `/api/sesiones/crear-multiples/`
+  - Consultar lista de sesiones por recurso
+- **Notas y reportes**:
+  - Visualizar resultados de atención y `nota_combinada`
+  - Revisar recomendaciones IA
+
+### Estudiante
+
+- Ver cursos y recursos disponibles
+- Entrar a recursos con `permite_monitoreo=True`
+- Usar la cámara desde el navegador para monitoreo de atención
 
 ---
 
-## 👀 Módulo de Atención (opcional)
+## 🧠 Módulo de Atención (Actualizado)
 
-- Requisitos Python: opencv-python, mediapipe, numpy (ver requirements.txt).
-- Permisos de cámara en navegador/sistema (desbloquear antivirus, cerrar apps que usen la cámara).
-- Flujo:
-  1) El estudiante accede a un recurso con “permite_monitoreo”.
-  2) Se crea/recupera su sesión de monitoreo.
-  3) Se ejecuta el monitoreo por tiempo definido y se guarda el score/métricas.
-- Lógica de visión: sistema_educativo/atencion/scripts/deteccion_facial.py
-- Endpoints: ver sistema_educativo/atencion/urls.py y views.py.
+### 🆕 **Ahora el procesamiento es 100% web**
 
----
+### Pipeline completo:
 
-## 🤖 Recomendaciones IA (opcional)
+1. El **docente** crea un recurso con `permite_monitoreo = True`
+2. El docente crea **sesiones masivas** para todos los estudiantes del curso
+   → `POST /api/sesiones/crear-multiples/`
+3. El **estudiante** abre el recurso → se activa la cámara
+4. El frontend envía frames al backend:
+   → `POST /api/sesiones/<id>/monitoreo-atencion/`
+5. El backend ejecuta:
+   - `procesamiento_mediapipe.py` → extrae EAR, MAR, Head Pose
+   - `modelo_atencion_rf.py` → clasifica con Random Forest
+6. Guarda métricas en `AtencionVisual`
+7. Calcula nivel de atención + score de atención
 
-- Backend en sistema_educativo/recomendaciones/claude_api.py.
-- Requiere ANTHROPIC_API_KEY en el .env del backend.
-- Historial docente en: /dashboard/docente/[cursoId]/recomendaciones
-- Endpoints: ver sistema_educativo/recomendaciones/urls.py y views.py.
+### Modelo de datos clave
 
----
+- **SesionMonitoreo**: gestiona cada sesión de monitoreo (estudiante, recurso, fase, timestamps)
+- **AtencionVisual**: almacena score de atención calculado por Random Forest
+- **NotaAcademica**: nota obtenida en actividades evaluables
+- **Nota combinada**: mezcla ponderada de atención + desempeño académico
 
-## 🔁 Flujos clave
+### Características extraídas
 
-- Monitoreo de atención
-  1) Crear/obtener sesión para estudiante y recurso.
-  2) Ejecutar monitoreo (OpenCV/MediaPipe).
-  3) Persistir score y métricas; visualizar en reportes.
-- Recomendaciones IA
-  1) Generación en backend a partir de atención/nota/contexto.
-  2) Docente aprueba/descarta; queda trazabilidad por curso.
-- Gestión docente
-  - Crear/editar recursos; marcar “permite_monitoreo” y “es_evaluable”.
-  - Crear sesiones de monitoreo para todo el curso.
+- **EAR (Eye Aspect Ratio)**: detección de parpadeo y fatiga visual
+- **MAR (Mouth Aspect Ratio)**: detección de bostezos y distracción
+- **Head Pose (Yaw, Pitch, Roll)**: orientación de la cabeza para detectar si mira la pantalla
 
 ---
 
-## 🔌 Endpoints (resumen)
+## 📡 Endpoints Relevantes
 
-- Usuarios: /api/usuarios/…
-- Cursos y estructura: /api/cursos/, /api/fases/, /api/lecciones/, /api/recursos/
-- Inscripciones: /api/inscripciones/
-- Atención: /api/atencion/… (sesiones y monitoreo)
-- Recomendaciones: /api/recomendaciones/…
-Consultar los urls.py y serializers.py de cada app para contratos exactos.
+### Sesiones de Monitoreo
+
+```
+POST /api/sesiones/crear-multiples/
+POST /api/sesiones/<id>/monitoreo-atencion/
+GET  /api/sesiones/?recurso=<uuid>
+```
+
+### Atención Visual
+
+```
+GET /api/atencion-visual/
+```
+
+### Cursos y Estructura
+
+```
+GET  /api/cursos/
+GET  /api/fases/
+GET  /api/lecciones/
+GET  /api/recursos/
+```
+
+### Usuarios e Inscripciones
+
+```
+GET  /api/usuarios/
+POST /api/inscripciones/
+```
+
+### Recomendaciones IA
+
+```
+GET /api/recomendaciones/
+```
 
 ---
 
 ## 🧪 Pruebas
 
-Backend:
-```sh
+### Backend
+
+```bash
 cd sistema_educativo
 venv\Scripts\activate
 python manage.py test
 ```
-Front (si agregas tests): usa tu runner preferido (Jest/RTL/Vitest).
+
+### Frontend
+
+```bash
+cd frontend
+bun test  # si tienes tests configurados
+```
 
 ---
 
-## 🐞 Troubleshooting
+## 🛑 Troubleshooting
 
-- 401/403 o CORS: revisa CORS_ALLOWED_ORIGINS y ALLOWED_HOSTS; tokens JWT válidos.
-- Migraciones: python manage.py makemigrations && python manage.py migrate.
-- Cámara no disponible: concede permiso en el navegador; cierra apps que usen la cámara.
-- Bun en Windows: si falla, usa npm/pnpm (los comandos equivalentes funcionan).
-- Rutas de API hardcodeadas: usa NEXT_PUBLIC_API_URL y un cliente axios común.
+### Errores comunes
+
+- **405 Method Not Allowed**
+  → El router no reconoce el método o falta el endpoint
+  
+- **CORS bloqueando**
+  → Revisar `CORS_ALLOWED_ORIGINS` en `.env`
+  
+- **La cámara no se activa**
+  → Cerrar apps que usen cámara (Zoom, Teams, OBS)
+  → Verificar permisos en el navegador
+  
+- **Modelo Random Forest no carga**
+  → Verificar ruta de `modelo_atencion_rf.pkl`
+  → Confirmar compatibilidad de versiones scikit-learn/numpy
+
+- **Errores 401/403**
+  → Revisar configuración JWT
+  → Verificar que el token se envía en headers: `Authorization: Bearer <token>`
+
+- **Problemas con migraciones**
+  ```bash
+  python manage.py makemigrations
+  python manage.py migrate
+  ```
 
 ---
 
 ## 🚢 Despliegue (guía rápida)
 
-Backend (Linux):
-- Variables de entorno seguras; DEBUG=False.
-- Base de datos PostgreSQL (DATABASE_URL).
-- collectstatic: python manage.py collectstatic.
-- Servir con gunicorn/uvicorn + nginx; servir STATIC y MEDIA.
+### Backend (Linux/Servidor)
 
-Frontend:
-- Configura NEXT_PUBLIC_API_URL con la URL pública del backend.
-- Build: bun run build (o npm run build).
-- Despliegue en Vercel/Netlify u otro hosting estático/SSR compatible.
+1. Configurar variables de entorno en producción
+2. `DEBUG=False`
+3. Base de datos **PostgreSQL** (usando `DATABASE_URL`)
+4. Ejecutar:
+   ```bash
+   python manage.py collectstatic
+   python manage.py migrate
+   ```
+5. Servir con:
+   - `gunicorn` o `uvicorn` detrás de **nginx**
+   - Servir `STATIC` y `MEDIA` desde nginx
+
+### Frontend
+
+1. Configurar `NEXT_PUBLIC_API_URL` con URL pública del backend
+2. Build de producción:
+   ```bash
+   bun run build
+   ```
+3. Desplegar en: Vercel, Netlify, Railway u otro proveedor compatible con Next.js
 
 ---
 
 ## 👨‍💻 Convenios de desarrollo
 
-- Formato y linting: usa el ESLint/Prettier del frontend.
-- Commits claros y descriptivos.
-- Evitar claves en el repositorio (usa .env y secretos del proveedor).
+- Usar formateo y linting del frontend (ESLint + Prettier)
+- Commits claros y descriptivos
+- No exponer claves ni tokens en el repositorio
+- Usar `.env` y secretos del proveedor de hosting
 
 ---
 
-## 👥 Autores
+## 👤 Autor
 
-- Marlon Chacón
-- Jordy Quimbita
+**Ariel Nuñez**
+
+Desarrollador y mantenedor principal del proyecto AttentionTrack.
 
 ---
 
 ## 📄 Licencia
 
-Uso académico. Adáptalo a tus necesidades respetando las licencias de dependencias.
+Proyecto de uso académico y de práctica profesional.
+Puedes adaptarlo y extenderlo respetando las licencias de las dependencias utilizadas.

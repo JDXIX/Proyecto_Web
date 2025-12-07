@@ -1,8 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function Navbar() {
@@ -10,36 +8,18 @@ export default function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    router.push("/"); // Redirige al login o landing page
+    router.push("/");
   };
 
   return (
-    <nav className="w-full bg-[#003087] text-white shadow flex items-center justify-between px-6 py-2 z-50 fixed top-0 left-0">
-      <div className="flex items-center gap-4">
-        <Image
-          src="/logo-jmvision.png"
-          alt="JM Vision Logo"
-          width={40}
-          height={40}
-          className="rounded-full bg-white p-1"
-        />
-        <span className="text-xl font-bold tracking-wide">JM Vision</span>
-        <Link href="/dashboard/estudiante" className="ml-6 hover:underline">
-          Dashboard
-        </Link>
-        <Link href="/dashboard/reportes" className="hover:underline">
-          Reportes
-        </Link>
-        <Link href="/dashboard/perfil" className="hover:underline">
-          Perfil
-        </Link>
-      </div>
+    <div className="fixed top-4 right-6 z-50">
       <button
         onClick={handleLogout}
-        className="font-semibold hover:underline transition"
+        className="px-4 py-2 bg-white border border-[var(--color-border)] rounded-lg shadow-sm 
+                   text-[var(--color-primary)] font-medium hover:bg-blue-50 transition"
       >
         Logout
       </button>
-    </nav>
+    </div>
   );
 }

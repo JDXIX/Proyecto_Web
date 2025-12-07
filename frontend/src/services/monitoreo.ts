@@ -3,6 +3,10 @@ import type { SesionMonitoreo } from "../types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+/* -----------------------------------------------------
+   TIPOS YA EXISTENTES
+----------------------------------------------------- */
+
 interface MonitoreoResponse {
   sesion: SesionMonitoreo;
   atencion_visual?: {
@@ -12,7 +16,7 @@ interface MonitoreoResponse {
   mensaje?: string;
 }
 
-interface NotaCombinada {
+export interface NotaCombinada {
   estudiante: string;
   recurso: string;
   score_atencion?: number;
@@ -20,8 +24,25 @@ interface NotaCombinada {
   nota_combinada: number;
 }
 
-// Iniciar monitoreo de atención (POST a una sesión específica)
-// El backend calcula el score; enviamos opcionalmente la duración.
+/* -----------------------------------------------------
+   ⚡️ NUEVO TIPO PARA RESPUESTA FRAME A FRAME
+----------------------------------------------------- */
+
+export interface RespuestaMonitoreo {
+  estado_atencion?: "ALTA" | "MEDIA" | "BAJA";
+  score_atencion?: number;
+  ear?: number;
+  mar?: number;
+  yaw?: number;
+  pitch?: number;
+  roll?: number;
+  [key: string]: unknown;
+}
+
+/* -----------------------------------------------------
+   INICIAR MONITOREO (SE MANTIENE IGUAL)
+----------------------------------------------------- */
+
 export async function iniciarMonitoreo(
   sesionId: string,
   token: string,
@@ -40,10 +61,14 @@ export async function iniciarMonitoreo(
       },
     }
   );
+
   return res.data;
 }
 
-// Crear sesiones de monitoreo para todos los estudiantes de un recurso/fase
+/* -----------------------------------------------------
+   CREAR SESIONES MULTIPLES (SE MANTIENE)
+----------------------------------------------------- */
+
 export async function crearSesionesMonitoreo(
   { recursoId, faseId }: { recursoId: string; faseId: string },
   token: string
@@ -61,8 +86,14 @@ export async function crearSesionesMonitoreo(
   return res.data;
 }
 
-// Crear (o devolver) sesión de monitoreo para el estudiante autenticado y un recurso
-export async function crearSesionParaMi(recursoId: string, token: string): Promise<{ id: string }> {
+/* -----------------------------------------------------
+   CREAR SESIÓN PARA UN ESTUDIANTE (SE MANTIENE)
+----------------------------------------------------- */
+
+export async function crearSesionParaMi(
+  recursoId: string,
+  token: string
+): Promise<{ id: string }> {
   const res = await axios.post<{ id: string }>(
     `${API_URL}/api/sesiones/crear-para-mi/`,
     { recurso: recursoId },
@@ -73,10 +104,13 @@ export async function crearSesionParaMi(recursoId: string, token: string): Promi
       },
     }
   );
-  return res.data; // { id }
+  return res.data;
 }
 
-// Obtener nota combinada de un estudiante para un recurso
+/* -----------------------------------------------------
+   OBTENER NOTA COMBINADA (SE MANTIENE)
+----------------------------------------------------- */
+
 export async function obtenerNotaCombinada(
   estudianteId: string,
   recursoId: string,
@@ -91,4 +125,43 @@ export async function obtenerNotaCombinada(
     }
   );
   return res.data;
+}
+
+/* -----------------------------------------------------
+   🔥 NUEVO — ENVÍO DE FRAME BASE64 AL BACKEND
+----------------------------------------------------- */
+
+interface EnviarFrameParams {
+  sesionId: string;
+  frame: string; // dataURL completa "data:image/jpeg;base64,XXXXX"
+}
+
+export async function enviarFrame(
+  { sesionId, frame }: EnviarFrameParams
+): Promise<RespuestaMonitoreo> {
+  
+  const token =
+    typeof window !== "undefined"
+      ? window.localStorage.getItem("token") // ✔ usa el token correcto del sistema
+      : null;
+
+  const url = `${API_URL}/api/sesiones/${sesionId}/monitoreo-atencion/`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({
+      frame, // ✔ enviamos el frame completo
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Error ${res.status} al enviar frame: ${text}`);
+  }
+
+  return (await res.json()) as RespuestaMonitoreo;
 }

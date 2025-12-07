@@ -18,9 +18,9 @@ export default function EstudianteDashboard() {
     }
   }, []);
 
-  // Filtrado y ordenamiento
+  // Filtrado y ordenamiento (LO MISMO)
   const cursosFiltrados = cursos
-    .filter(curso =>
+    .filter((curso) =>
       curso.nombre.toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) =>
@@ -30,48 +30,65 @@ export default function EstudianteDashboard() {
     );
 
   return (
-    <div className="w-full h-full p-4 md:p-8">
-      <h1 className="text-3xl font-bold text-[#003087] mb-2">Mis Cursos</h1>
-      <p className="mb-8 text-lg text-gray-700">
-        Aquí puedes ver todos los cursos en los que estás inscrito.
-      </p>
+    <div className="w-full h-full p-4 md:p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-[var(--color-primary)] mb-1">
+          Mi Portal Estudiantil
+        </h1>
+        <p className="text-base md:text-lg text-[var(--color-text-light)]">
+          Clases y cursos en los que estás inscrito.
+        </p>
+      </div>
+
       {/* Barra de acciones */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex flex-wrap items-center gap-4">
         {/* Buscar */}
         <div className="relative">
           <input
             type="text"
             placeholder="Buscar curso..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#00B7EB]"
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10 pr-4 py-2 border border-[var(--color-border)] rounded-lg bg-white
+                       focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] shadow-sm"
           />
-          <FiSearch className="absolute left-3 top-2.5 text-[#003087]" />
+          <FiSearch className="absolute left-3 top-2.5 text-[var(--color-primary)]" />
         </div>
         {/* Ordenar */}
         <button
           onClick={() => setOrder(order === "asc" ? "desc" : "asc")}
-          className="p-2 rounded hover:bg-[#e6f0fa] transition"
+          className="p-2 rounded-lg border border-[var(--color-border)] bg-white 
+                     hover:bg-blue-50 transition shadow-sm"
           title="Ordenar"
         >
-          <FiList className="text-2xl text-[#003087]" />
+          <FiList className="text-2xl text-[var(--color-primary)]" />
         </button>
       </div>
-      {/* Cursos */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {cursosFiltrados.map(curso => (
+
+      {/* Cards de cursos */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        {cursosFiltrados.map((curso) => (
           <Link
             key={curso.id}
             href={`/dashboard/estudiante/${curso.id}`}
-            className="bg-white rounded-lg shadow p-6 flex flex-col items-center hover:shadow-lg transition cursor-pointer"
+            className="bg-white rounded-2xl shadow-sm border border-[var(--color-border)]
+                       p-6 flex flex-col items-center hover:shadow-md hover:-translate-y-1 
+                       transition cursor-pointer"
           >
-            {/* Ícono circular con imagen (si tienes imagen, cámbiala aquí) */}
-            <div className="w-24 h-24 rounded-full bg-[#E6F0FA] flex items-center justify-center mb-4 shadow">
-              {/* Puedes reemplazar el emoji por una imagen si tienes curso.imagen */}
-              <span className="text-4xl text-[#00B7EB]">📘</span>
+            {/* Ícono circular */}
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-[#EEF2FF] flex items-center justify-center mb-4 shadow-sm">
+              <span className="text-3xl md:text-4xl text-[var(--color-primary)]">
+                📘
+              </span>
             </div>
-            <div className="text-xl font-bold text-[#003087] mb-2 text-center">{curso.nombre}</div>
-            <div className="text-gray-600 text-center">{curso.descripcion}</div>
+
+            <div className="text-lg md:text-xl font-semibold text-[var(--color-text)] mb-2 text-center">
+              {curso.nombre}
+            </div>
+            <div className="text-sm text-[var(--color-text-light)] text-center line-clamp-3">
+              {curso.descripcion}
+            </div>
           </Link>
         ))}
       </div>

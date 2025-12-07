@@ -1,0 +1,18 @@
+Django
+djangorestframework
+django-cors-headers
+python-dotenv
+
+# Vision por computadora
+opencv-python
+mediapipe
+numpy
+
+# JWT (si aplica según settings.py)
+djangorestframework-simplejwt
+
+# PostgreSQL driver (opcional, para producción)
+psycopg2-binary
+
+# Recomendaciones IA
+requests

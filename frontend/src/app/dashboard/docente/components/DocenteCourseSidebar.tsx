@@ -17,7 +17,6 @@ interface Props {
 export default function DocenteCourseSidebar({ cursoId }: Props) {
   const pathname = usePathname();
 
-  // Paleta y estructura alineada a ISO 21001:2018
   const links = [
     {
       href: `/dashboard/docente/${cursoId}`,
@@ -28,11 +27,6 @@ export default function DocenteCourseSidebar({ cursoId }: Props) {
       href: `/dashboard/docente/${cursoId}/reportes`,
       label: "Reportes",
       icon: <FiBarChart2 />,
-    },
-    {
-      href: `/dashboard/docente/${cursoId}/recomendaciones`,
-      label: "Recomendaciones IA",
-      icon: <FiMessageSquare />,
     },
     {
       href: `/dashboard/docente/${cursoId}/historial`,
@@ -47,27 +41,35 @@ export default function DocenteCourseSidebar({ cursoId }: Props) {
   ];
 
   return (
-    <aside className="w-72 bg-white border-r border-[#E6F0FA] p-4 flex flex-col min-h-screen">
-      <div className="font-bold text-lg text-[#003087] mb-6">
+    <aside className="w-72 bg-white border-r border-[var(--color-border)] p-6 flex flex-col min-h-screen shadow-sm">
+      <div className="font-bold text-lg text-[var(--color-primary)] mb-6">
         Gestión de Curso
       </div>
       <nav className="flex-1 flex flex-col gap-2">
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium text-[#003087] hover:bg-[#E6F0FA] transition ${
-              pathname === link.href ||
-              (link.href.endsWith("#estudiantes") &&
-                pathname === `/dashboard/docente/${cursoId}`)
-                ? "bg-[#D3F3FF] font-bold"
-                : ""
-            }`}
-          >
-            <span className="text-xl">{link.icon}</span>
-            {link.label}
-          </Link>
-        ))}
+        {links.map((link) => {
+          const active =
+            pathname === link.href ||
+            (link.href.endsWith("#estudiantes") &&
+              pathname === `/dashboard/docente/${cursoId}`);
+
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium transition
+                ${
+                  active
+                    ? "bg-blue-50 text-[var(--color-primary)]"
+                    : "text-[var(--color-text)] hover:bg-blue-50"
+                }`}
+            >
+              <span className="text-xl text-[var(--color-primary)]">
+                {link.icon}
+              </span>
+              {link.label}
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );

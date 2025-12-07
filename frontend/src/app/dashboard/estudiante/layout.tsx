@@ -6,11 +6,11 @@ import Footer from "@/components/Footer";
 
 export default function EstudianteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col bg-[#F4F8FB] w-full">
+    <div className="min-h-screen flex flex-col bg-[var(--color-bg)] w-full">
       {/* Navbar global */}
       <Navbar />
-      {/* Contenido principal con buen padding y centrado */}
-      <main className="flex-1 w-full h-full px-8 py-8 max-w-screen-xl mx-auto flex flex-col">
+      {/* Contenido principal centrado */}
+      <main className="flex-1 w-full h-full px-4 md:px-8 py-6 md:py-8 max-w-6xl mx-auto flex flex-col">
         {children}
       </main>
       {/* Footer institucional */}

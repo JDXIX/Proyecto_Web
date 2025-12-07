@@ -1,7 +1,5 @@
 "use client";
 
-//Comentario solo para hacer otro comit
-
 import { useEffect, useState } from "react";
 import { getUsuarioActual } from "@/services/usuarios";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -27,38 +25,61 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl font-semibold">Cargando...</div>
+        <div className="text-xl font-semibold text-gray-600">Cargando...</div>
       </div>
     );
   }
 
   return (
     <ProtectedRoute allowedRoles={["admin", "administrador"]} user={user}>
-      <div className="w-full h-full p-4 md:p-8">
-        <h1 className="text-3xl font-bold text-[#003087] mb-6">Panel de Administrador</h1>
-        <p className="mb-8 text-lg text-gray-700">
-          Bienvenido al panel de administración. Selecciona una sección del menú lateral para gestionar usuarios, cursos o inscripciones.
-          O selecciona una de las opciones a continuación.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="w-full h-full p-6 md:p-10">
+
+        {/* TÍTULO */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-[var(--color-primary)]">
+            Panel de Administración
+          </h1>
+          <p className="subtitle mt-1">
+            Gestiona usuarios, cursos e inscripciones desde un panel centralizado.
+          </p>
+        </div>
+
+        {/* TARJETAS DE ACCESO DIRECTO */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
           <Link href="/dashboard/admin/usuarios">
-            <div className="bg-white rounded-lg shadow p-6 hover:bg-[#e6f0fa] cursor-pointer transition">
-              <h2 className="text-xl font-semibold text-[#003087] mb-2">Gestión de Usuarios</h2>
-              <p className="text-gray-600">Crea, edita y elimina usuarios del sistema.</p>
+            <div className="card p-6 cursor-pointer hover:shadow-md transition">
+              <h2 className="text-xl font-semibold text-[var(--color-primary)] mb-2">
+                Gestión de Usuarios
+              </h2>
+              <p className="text-[var(--color-text-light)]">
+                Crea, edita y administra los usuarios del sistema.
+              </p>
             </div>
           </Link>
+
           <Link href="/dashboard/admin/inscripciones">
-            <div className="bg-white rounded-lg shadow p-6 hover:bg-[#e6f0fa] cursor-pointer transition">
-              <h2 className="text-xl font-semibold text-[#003087] mb-2">Inscripción de Estudiantes</h2>
-              <p className="text-gray-600">Inscribe estudiantes a cursos de forma individual o masiva.</p>
+            <div className="card p-6 cursor-pointer hover:shadow-md transition">
+              <h2 className="text-xl font-semibold text-[var(--color-primary)] mb-2">
+                Inscripción de Estudiantes
+              </h2>
+              <p className="text-[var(--color-text-light)]">
+                Inscribe estudiantes de forma rápida y eficiente.
+              </p>
             </div>
           </Link>
+
           <Link href="/dashboard/admin/cursos">
-            <div className="bg-white rounded-lg shadow p-6 hover:bg-[#e6f0fa] cursor-pointer transition">
-              <h2 className="text-xl font-semibold text-[#003087] mb-2">Gestión de Cursos</h2>
-              <p className="text-gray-600">Crea, edita y elimina cursos académicos.</p>
+            <div className="card p-6 cursor-pointer hover:shadow-md transition">
+              <h2 className="text-xl font-semibold text-[var(--color-primary)] mb-2">
+                Gestión de Cursos
+              </h2>
+              <p className="text-[var(--color-text-light)]">
+                Administra cursos académicos y sus asignaciones.
+              </p>
             </div>
           </Link>
+
         </div>
       </div>
     </ProtectedRoute>

@@ -1,20 +1,71 @@
 @import "tailwindcss";
 
+/* ============================
+   🎨 PALETA GLOBAL MODERNA
+   ============================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-primary: #4B6BFB;        /* Azul suave */
+  --color-secondary: #A78BFA;      /* Morado suave */
+  --color-bg: #F9FAFB;             /* Gris claro para fondo */
+  --color-card: #FFFFFF;           /* Fondo de tarjetas */
+  --color-border: #E5E7EB;         /* Borde suave */
+  --color-text: #111827;           /* Texto principal */
+  --color-text-light: #6B7280;     /* Texto suave */
+  --color-success: #4ADE80;        /* Verde éxito */
+  --color-error: #F87171;          /* Rojo error */
 }
 
-/* ELIMINAR O COMENTAR el modo oscuro para cumplir con ISO 21001:2018 que requiere consistencia visual */
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
-
+/* ============================
+   🎯 ESTILOS GENERALES
+   ============================ */
 body {
-  background: #ffffff !important; /* Forzar fondo blanco siempre */
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #FFFFFF !important; /* Fondo blanco fijo por ISO */
+  color: var(--color-text);
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+}
+
+/* ============================
+   🧩 UTILIDADES GLOBALIAS
+   ============================ */
+
+/* Tarjetas */
+.card {
+  @apply bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-border)];
+}
+
+/* Botón primario */
+.btn-primary {
+  @apply bg-[var(--color-primary)] text-white font-medium px-4 py-2 rounded-lg 
+         hover:bg-blue-600 transition;
+}
+
+/* Botón secundario estilo ghost */
+.btn-ghost {
+  @apply text-[var(--color-primary)] hover:bg-blue-50 rounded-lg px-4 py-2 transition;
+}
+
+/* Textos */
+.title {
+  @apply text-2xl font-semibold text-[var(--color-text)];
+}
+
+.subtitle {
+  @apply text-sm text-[var(--color-text-light)];
+}
+
+/* Tabs modernas */
+.tab {
+  @apply px-4 py-2 text-[var(--color-text-light)] hover:text-[var(--color-primary)] 
+         transition cursor-pointer;
+}
+
+.tab-active {
+  @apply text-[var(--color-primary)] font-medium border-b-2 border-[var(--color-primary)];
+}
+
+.title {
+  font-size: 1.875rem;        /* equivalente a text-3xl */
+  font-weight: 800;           /* bien marcadito */
+  color: #4B6BFB;             /* azul como el de tu captura */
+  letter-spacing: 0.02em;
 }

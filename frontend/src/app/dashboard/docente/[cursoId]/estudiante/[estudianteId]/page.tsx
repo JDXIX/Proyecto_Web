@@ -86,7 +86,7 @@ export default function DetalleEstudianteDocentePage({
           Historial del Estudiante
         </h1>
         <p className="mb-6 text-gray-700">
-          Visualiza el progreso, monitoreo y recomendaciones IA generadas para este estudiante, conforme a la <b>norma ISO 21001:2018</b>.
+          Visualiza el historial de monitoreo del estudiante
         </p>
         <Link
           href={`/dashboard/docente/${cursoId}`}
@@ -105,11 +105,8 @@ export default function DetalleEstudianteDocentePage({
                 <tr className="bg-[#E6F0FA] text-[#003087]">
                   <th className="py-2 px-4 text-left">Nivel</th>
                   <th className="py-2 px-4 text-left">Lección</th>
-                  <th className="py-2 px-4 text-left">Actividad</th>
+                  <th className="py-2 px-4 text-left">Recurso</th>
                   <th className="py-2 px-4 text-center">Atención</th>
-                  <th className="py-2 px-4 text-center">Nota</th>
-                  <th className="py-2 px-4 text-left">Recomendación IA</th>
-                  <th className="py-2 px-4 text-center">Estado</th>
                   <th className="py-2 px-4 text-center">Fecha</th>
                 </tr>
               </thead>
