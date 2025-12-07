@@ -331,7 +331,7 @@ export default function RecursoFormModal({
             </h3>
             <p className="mb-4">
               ¿Está seguro de que desea crear este recurso como <b>evaluable</b>?<br />
-              Recuerde que al ser evaluable será monitoreado conforme a la norma ISO 21001:2018.
+              Recuerde que al ser evaluable será monitoreado.
             </p>
             <div className="flex justify-end gap-2">
               <button
@@ -358,7 +358,7 @@ export default function RecursoFormModal({
             <h3 className="text-lg font-bold mb-2 text-[#003087]">Crear sesión de monitoreo</h3>
             <p className="mb-4 text-center">
               Este recurso requiere monitoreo de atención.<br />
-              Para cumplir la norma ISO 21001:2018, debe crear la sesión de monitoreo para los estudiantes.<br />
+              Debe crear la sesión de monitoreo para los estudiantes.<br />
               <span className="text-xs text-gray-500">Presione el botón para continuar.</span>
             </p>
             <button
